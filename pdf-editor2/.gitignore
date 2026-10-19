@@ -1,0 +1,40 @@
+## Professional .gitignore for .NET / Visual Studio with Skia dependencies
+
+# User-specific files
+*.rsuser
+*.suo
+*.user
+*.userユーザー
+*.userosscache
+*.sln.docstates
+
+# Build results
+[Dd]ebug/
+[Dd]ebugPublic/
+[Rr]elease/
+x64/
+x86/
+[Aa]rm/
+[Aa]rm64/
+bbin/
+bin/
+obj/
+
+# Visual Studio cache and artifacts
+.vs/
+LocalHistory/
+TestResults/
+*.vshost.exe*
+*.manifest
+*.bak
+
+# NuGet Packages architecture caches
+*.nupkg
+**/packages/*
+!**/packages/repositories.config
+project.lock.json
+project.fragment.lock.json
+
+# Specialized Skia / OS Temporary graphics dumps
+*.log
+*.tmp
