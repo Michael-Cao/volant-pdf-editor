@@ -7,57 +7,62 @@
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
     <Grid Background="#F3F3F3">
+        <!-- 1. DEFINE RIGID CELL SEPARATORS -->
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
+            <!-- Row 0: Menu Bar -->
+            <RowDefinition Height="Auto"/>
+            <!-- Row 1: Action Toolbar -->
             <RowDefinition Height="*"/>
+            <!-- Row 2: Main Workspace Canvas (Takes remaining space) -->
+            <RowDefinition Height="Auto"/>
+            <!-- Row 3: Bottom Status Bar -->
         </Grid.RowDefinitions>
 
+        <!-- ROW 0: TOP WINDOWS MENU BAR -->
         <Menu Grid.Row="0" Background="#FFFFFF" Padding="2">
             <MenuItem Header="_File">
-                <!-- This links directly to the same Open code we wrote earlier -->
                 <MenuItem Header="_Open PDF..." Click="OpenPdf_Click" InputGestureText="Ctrl+O"/>
-
-                <!-- 📁 NEW: The Close File MenuItem -->
                 <MenuItem Header="_Close File" Click="ClosePdf_Click" InputGestureText="Ctrl+W"/>
-
+                <Separator/>
                 <MenuItem Header="_Save" InputGestureText="Ctrl+S"/>
                 <MenuItem Header="Save _As..."/>
                 <Separator/>
                 <MenuItem Header="_Exit" Click="ExitApp_Click"/>
             </MenuItem>
-
-            <MenuItem Header="_Edit">
-                <MenuItem Header="Undo" InputGestureText="Ctrl+Z"/>
-                <MenuItem Header="Redo" InputGestureText="Ctrl+Y"/>
-                <Separator/>
-                <MenuItem Header="Cut" InputGestureText="Ctrl+X"/>
-                <MenuItem Header="Copy" InputGestureText="Ctrl+C"/>
-                <MenuItem Header="Paste" InputGestureText="Ctrl+V"/>
-                <Separator/>
-                <MenuItem Header="Delete" InputGestureText="Del"/>
-            </MenuItem>
-
-            <MenuItem Header="_Help">
-                <MenuItem Header="_About Nova PDF" Click="About_Click"/>
-            </MenuItem>
+            <MenuItem Header="_Edit"/>
+            <MenuItem Header="_Help" Click="About_Click"/>
         </Menu>
 
+        <!-- ROW 1: ACTION TOOLBAR -->
         <Border Grid.Row="1" Background="#FFFFFF" BorderBrush="#E0E0E0" BorderThickness="0,1,0,1" Padding="5">
-            <StackPanel Orientation="Horizontal">
-                <Button Content="📁 Open PDF" Click="OpenPdf_Click" Width="100" Height="30" Margin="5,0" Background="#007ACC" Foreground="White" FontWeight="Bold" BorderThickness="0"/>
-                <Button Content="💾 Save As" Width="100" Height="30" Margin="5,0" Background="#E1E1E1" BorderThickness="0"/>
-            </StackPanel>
-        </Border>
+            <Grid>
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
+                    <Button Content="📁 Open PDF" Click="OpenPdf_Click" Width="100" Height="30" Margin="5,0" Background="#007ACC" Foreground="White" FontWeight="Bold" BorderThickness="0"/>
+                    <Button Content="💾 Save As" Width="100" Height="30" Margin="5,0" Background="#E1E1E1" BorderThickness="0"/>
+                </StackPanel>
 
-        <Grid Grid.Row="1">
+                <!-- 🔍 Zoom Control Group (Centered in Toolbar) -->
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,10,0">
+                    <Button Content="➖" Click="ZoomOut_Click" Width="30" Height="30" Background="#F0F0F0" BorderBrush="#CCCCCC"/>
+                    <Slider x:Name="ZoomSlider" Width="150" Minimum="0.5" Maximum="3.0" Value="1.0" 
+                    TickFrequency="0.1" IsSnapToTickEnabled="True" VerticalAlignment="Center" Margin="10,0"
+                    ValueChanged="ZoomSlider_ValueChanged"/>
+                    <Button Content="➕" Click="ZoomIn_Click" Width="30" Height="30" Background="#F0F0F0" BorderBrush="#CCCCCC"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+        
+        <!-- ROW 2: MAIN WORKSPACE SPLIT (Enforces explicit boundaries inside Row 2) -->
+        <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="220"/>
-                <!-- Sidebar for document page list -->
+                <!-- Sidebar Column -->
                 <ColumnDefinition Width="*"/>
-                <!-- Main viewport center canvas -->
+                <!-- Main Viewer Column -->
             </Grid.ColumnDefinitions>
 
-            <!-- Left Panel (Sidebar for Thumbnails or Metadata) -->
+            <!-- Left Sidebar Panel -->
             <Border Grid.Column="0" Background="#F9F9F9" BorderBrush="#E0E0E0" BorderThickness="0,0,1,0">
                 <StackPanel Margin="10">
                     <TextBlock Text="Document Properties" FontSize="14" FontWeight="Bold" Foreground="#333333" Margin="0,0,0,10"/>
@@ -65,34 +70,36 @@
                 </StackPanel>
             </Border>
 
-            <!-- Replace your old ScrollViewer workspace layout with this multi-page setup -->
-            <ScrollViewer Grid.Column="1" HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" Background="#E5E5E5">
-                <!-- ItemsControl configured with full UI Virtualization controls -->
+            <!-- Central Multi-Page View Container -->
+            <ScrollViewer x:Name="WorkspaceScrollViewer" Grid.Column="1" 
+              HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" 
+              Background="#E5E5E5" ScrollChanged="WorkspaceScrollViewer_ScrollChanged">
+
+                <!-- 📁 FIXED: Attach the LayoutTransform directly onto the main PagesControl container -->
                 <ItemsControl x:Name="PagesControl" Margin="20"
                   VirtualizingStackPanel.IsVirtualizing="True"
                   VirtualizingStackPanel.VirtualizationMode="Recycling"
                   ScrollViewer.CanContentScroll="True">
 
+                    <!-- Moving it here makes 'WorkspaceScaleTransform' globally visible to C# -->
+                    <ItemsControl.LayoutTransform>
+                        <ScaleTransform x:Name="WorkspaceScaleTransform" ScaleX="1.0" ScaleY="1.0"/>
+                    </ItemsControl.LayoutTransform>
+
                     <ItemsControl.ItemsPanel>
                         <ItemsPanelTemplate>
-                            <!-- Forces WPF to reuse offscreen page containers -->
                             <VirtualizingStackPanel/>
                         </ItemsPanelTemplate>
                     </ItemsControl.ItemsPanel>
 
                     <ItemsControl.ItemTemplate>
                         <DataTemplate>
-                            <!-- Set layout boundaries beforehand using buffered dimensions -->
                             <Border Background="White" Margin="0,15" CornerRadius="2" Width="{Binding Width}" Height="{Binding Height}">
                                 <Border.Effect>
                                     <DropShadowEffect BlurRadius="8" Color="#BBBBBB" ShadowDepth="1"/>
                                 </Border.Effect>
-
                                 <Grid>
-                                    <!-- 1. Background Visual Loader Layer -->
                                     <Image Source="{Binding BackgroundImage}" Stretch="Uniform"/>
-
-                                    <!-- 2. Overlay Canvas for editing elements -->
                                     <ContentControl Content="{Binding ComponentCanvas}"/>
                                 </Grid>
                             </Border>
@@ -101,5 +108,46 @@
                 </ItemsControl>
             </ScrollViewer>
         </Grid>
+
+        <!-- ROW 3: BOTTOM WINDOWS STATUS BAR -->
+        <StatusBar Grid.Row="3" Background="#FFFFFF" BorderBrush="#E0E0E0" BorderThickness="0,1,0,0" Padding="5,3">
+            <StatusBar.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <!-- Define clean, separated columns inside the status bar -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <!-- Column 0: Left message panel -->
+                            <ColumnDefinition Width="120"/>
+                            <!-- Column 1: Middle page label panel (Fixed width prevents overlaps) -->
+                            <ColumnDefinition Width="80"/>
+                            <!-- Column 2: Right zoom percentage panel -->
+                        </Grid.ColumnDefinitions>
+                    </Grid>
+                </ItemsPanelTemplate>
+            </StatusBar.ItemsPanel>
+
+            <!-- Pane 1: Message Pane (Left-aligned) -->
+            <StatusBarItem Grid.Column="0" HorizontalAlignment="Left">
+                <StackPanel Orientation="Horizontal">
+                    <TextBlock Text="ℹ️" Margin="0,0,5,0" FontSize="11" VerticalAlignment="Center"/>
+                    <TextBlock x:Name="TxtStatusMessage" Text="Ready" Foreground="#555555" FontSize="12" VerticalAlignment="Center"/>
+                </StackPanel>
+            </StatusBarItem>
+
+            <!-- Pane 2: Page Pane (Explicitly assigned to Column 1) -->
+            <StatusBarItem Grid.Column="1" HorizontalAlignment="Center">
+                <Border BorderBrush="#E0E0E0" BorderThickness="1,0,0,0" Padding="10,0,10,0">
+                    <TextBlock x:Name="TxtPageStatus" Text="Page 0 of 0" Foreground="#555555" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
+                </Border>
+            </StatusBarItem>
+
+            <!-- Pane 3: Zoom Percentage Pane (Explicitly assigned to Column 2) -->
+            <StatusBarItem Grid.Column="2" HorizontalAlignment="Right" Margin="0,0,10,0">
+                <Border BorderBrush="#E0E0E0" BorderThickness="1,0,0,0" Padding="10,0,0,0">
+                    <TextBlock x:Name="TxtZoomStatus" Text="100%" Foreground="#555555" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" Width="50" TextAlignment="Right"/>
+                </Border>
+            </StatusBarItem>
+        </StatusBar>
     </Grid>
 </Window>

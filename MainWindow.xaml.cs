@@ -1,24 +1,25 @@
-﻿using System.Collections.ObjectModel;
-using System.Windows;
-using Microsoft.Win32;
+﻿using Microsoft.Win32;
 using pdf_editor2.Models;
 using pdf_editor2.Services;
+using System;
+using System.Collections.ObjectModel;
+using System.Windows;
+using System.Windows.Controls;
+using System.Windows.Media;
 
 namespace pdf_editor2
 {
     public partial class MainWindow : Window
     {
-        // Instantiate our new event-driven streaming background render framework engine
         private readonly PdfRenderEngine _renderEngine = new PdfRenderEngine();
-
-        // This live reactive list handles automated dynamic layout updates
         private ObservableCollection<PdfPageViewModel> _activePages = new ObservableCollection<PdfPageViewModel>();
+
+        // Tracks the overall total file capacity count locally
+        private int _totalDocumentPages = 0;
 
         public MainWindow()
         {
             InitializeComponent();
-
-            // ⚡ SUBSCRIBE: Tell the main application to listen for pages coming out of the engine
             _renderEngine.OnPageParsed += RenderEngine_OnPageParsed;
         }
 
@@ -32,23 +33,40 @@ namespace pdf_editor2
                 this.Title = $"PDF Editor - {selectedFilePath}";
                 TxtFilePath.Text = $"Active File:\n{selectedFilePath}";
 
-                // Clear workspace cache layout fields for incoming tracking metrics
+                _totalDocumentPages = 0;
+                UpdatePageStatusLabel(0);
+
+                // ⚡ Update Message Pane right as parsing begins
+                TxtStatusMessage.Text = "Opening document and preparing background stream engine...";
+
                 _activePages.Clear();
                 PagesControl.ItemsSource = _activePages;
 
-                // 🚀 EMIT ROUTE: Tell the background engine to start processing and emitting events
                 _renderEngine.StartStreamingDocument(selectedFilePath);
             }
         }
 
-        // ⚡ LISTENER: Executes dynamically every time the engine finishes compiling a single page
         private void RenderEngine_OnPageParsed(object sender, PageParsedEventArgs e)
         {
-            // Marshall execution securely back to the main UI loop thread context
             Application.Current.Dispatcher.Invoke(() =>
             {
-                // Drop the packaged page view directly into the UI Collection array list
                 _activePages.Add(e.PageViewModel);
+                _totalDocumentPages = e.TotalPages;
+
+                // ⚡ Update Message Pane dynamically as each page streams in
+                if (_activePages.Count < _totalDocumentPages)
+                {
+                    TxtStatusMessage.Text = $"Streaming page {_activePages.Count} of {_totalDocumentPages}... (UI is active)";
+                }
+                else
+                {
+                    TxtStatusMessage.Text = "Document loading complete. Ready to edit.";
+                }
+
+                if (_activePages.Count == 1 || WorkspaceScrollViewer.VerticalOffset == 0)
+                {
+                    UpdatePageStatusLabel(1);
+                }
             });
         }
 
@@ -56,11 +74,93 @@ namespace pdf_editor2
         {
             _activePages.Clear();
             PagesControl.ItemsSource = null;
+            _totalDocumentPages = 0;
+            UpdatePageStatusLabel(0);
+
+            // ⚡ Reset message pane on close
+            TxtStatusMessage.Text = "Ready";
+
             this.Title = "Nova PDF Editor";
             TxtFilePath.Text = "No file loaded";
 
-            System.GC.Collect();
-            System.GC.WaitForPendingFinalizers();
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+        }
+
+        // ⚡ Triggers smoothly as the slider shifts or buttons tweak values
+        private void ZoomSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
+        {
+            // Check initialization boundaries to prevent loading crashes
+            if (WorkspaceScaleTransform == null || TxtZoomStatus == null) return;
+
+            // Apply the scaling factors to our workspace layout transformation layer
+            WorkspaceScaleTransform.ScaleX = e.NewValue;
+            WorkspaceScaleTransform.ScaleY = e.NewValue;
+
+            // Output human-readable percentage metric text (e.g., 1.5 -> "150%")
+            TxtZoomStatus.Text = $"{Math.Round(e.NewValue * 100)}%";
+        }
+
+        // ➖ Decrements scale layout by 10% blocks
+        private void ZoomOut_Click(object sender, RoutedEventArgs e)
+        {
+            ZoomSlider.Value = Math.Max(ZoomSlider.Minimum, ZoomSlider.Value - 0.1);
+        }
+
+        // ➕ Increments scale layout by 10% blocks
+        private void ZoomIn_Click(object sender, RoutedEventArgs e)
+        {
+            ZoomSlider.Value = Math.Min(ZoomSlider.Maximum, ZoomSlider.Value + 0.1);
+        }
+
+        // ⚡ ACTIVE SCROLL CALCULATOR: Triggers dynamically whenever the mouse wheel spins
+        private void WorkspaceScrollViewer_ScrollChanged(object sender, ScrollChangedEventArgs e)
+        {
+            if (_activePages.Count == 0 || _totalDocumentPages == 0) return;
+
+            try
+            {
+                // 1. Define a target point near the top-center of our ScrollViewer window zone
+                // This acts like a virtual scanning laser line checking what page passes underneath it
+                Point testPoint = new Point(WorkspaceScrollViewer.ActualWidth / 2, 40);
+
+                // 2. Perform a Hit Test to find what visual element is physically sitting at that point
+                HitTestResult hitResult = VisualTreeHelper.HitTest(WorkspaceScrollViewer, testPoint);
+
+                if (hitResult != null && hitResult.VisualHit != null)
+                {
+                    DependencyObject obj = hitResult.VisualHit;
+
+                    // 3. Walk up the visual layout nesting tree to locate our FrameworkElement page block container
+                    while (obj != null && obj != WorkspaceScrollViewer)
+                    {
+                        // Check if this layout item is currently holding one of our PdfPageViewModel models
+                        if (obj is FrameworkElement element && element.DataContext is PdfPageViewModel pageModel)
+                        {
+                            int detectedPageNum = pageModel.PageNumber;
+
+                            // Constrain the result within valid document bounds and update label
+                            int clampedPageNum = Math.Clamp(detectedPageNum, 1, _totalDocumentPages);
+                            UpdatePageStatusLabel(clampedPageNum);
+                            return;
+                        }
+
+                        // Keep climbing up the parent layout tree
+                        obj = VisualTreeHelper.GetParent(obj);
+                    }
+                }
+            }
+            catch
+            {
+                // Fallback to basic offset calculation if layout is temporarily measuring/redrawing
+                int fallbackIndex = (int)Math.Clamp(Math.Round(WorkspaceScrollViewer.VerticalOffset) + 1, 1, _totalDocumentPages);
+                UpdatePageStatusLabel(fallbackIndex);
+            }
+        }
+
+        private void UpdatePageStatusLabel(int currentPage)
+        {
+            TxtPageStatus.Text = $"Page {currentPage} of {_totalDocumentPages}";
         }
 
         private void ExitApp_Click(object sender, RoutedEventArgs e) => Application.Current.Shutdown();
