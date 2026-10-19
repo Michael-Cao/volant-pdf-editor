@@ -5,6 +5,7 @@ using System;
 using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Input;
 using System.Windows.Media;
 
 namespace pdf_editor2
@@ -21,6 +22,58 @@ namespace pdf_editor2
         {
             InitializeComponent();
             _renderEngine.OnPageParsed += RenderEngine_OnPageParsed;
+        }
+
+        private void Window_KeyDown(object sender, KeyEventArgs e)
+        {
+            // Check if the Control key is currently being pressed down
+            if (Keyboard.Modifiers == ModifierKeys.Control)
+            {
+                switch (e.Key)
+                {
+                    // ➕ ZOOM IN SHORTCUTS (Supports standard '=' key, Shifted '+' key, and Numpad Add)
+                    case Key.OemPlus:
+                    case Key.Add:
+                        e.Handled = true; // Prevents the keypress from triggering typing events
+                        ZoomSlider.Value = Math.Min(ZoomSlider.Maximum, ZoomSlider.Value + 0.1);
+                        break;
+
+                    // ➖ ZOOM OUT SHORTCUTS (Supports standard '-' key and Numpad Subtract)
+                    case Key.OemMinus:
+                    case Key.Subtract:
+                        e.Handled = true;
+                        ZoomSlider.Value = Math.Max(ZoomSlider.Minimum, ZoomSlider.Value - 0.1);
+                        break;
+
+                    // 🎯 OPTIONAL: Ctrl + 0 resets zoom back to 100% standard layout
+                    case Key.D0:
+                    case Key.NumPad0:
+                        e.Handled = true;
+                        ZoomSlider.Value = 1.0;
+                        break;
+                }
+            }
+        }
+
+        private void Window_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
+        {
+            // Check if the Control key is physically held down during the mouse roll event
+            if (Keyboard.Modifiers == ModifierKeys.Control)
+            {
+                // Mark the event as handled to stop the ScrollViewer from jumping up/down vertically
+                e.Handled = true;
+
+                if (e.Delta > 0)
+                {
+                    // 🔄 Roll Up -> Zoom In (Increment scale by 10% blocks)
+                    ZoomSlider.Value = Math.Min(ZoomSlider.Maximum, ZoomSlider.Value + 0.1);
+                }
+                else if (e.Delta < 0)
+                {
+                    // 🔄 Roll Down -> Zoom Out (Decrement scale by 10% blocks)
+                    ZoomSlider.Value = Math.Max(ZoomSlider.Minimum, ZoomSlider.Value - 0.1);
+                }
+            }
         }
 
         private void OpenPdf_Click(object sender, RoutedEventArgs e)

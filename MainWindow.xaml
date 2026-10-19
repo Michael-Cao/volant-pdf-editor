@@ -5,7 +5,10 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:pdf_editor2"
         mc:Ignorable="d"
-        Title="MainWindow" Height="450" Width="800">
+        Title="PDF Editor" Height="650" Width="900"
+        WindowStartupLocation = "CenterScreen"
+        KeyDown="Window_KeyDown"
+        PreviewMouseWheel="Window_PreviewMouseWheel">
     <Grid Background="#F3F3F3">
         <!-- 1. DEFINE RIGID CELL SEPARATORS -->
         <Grid.RowDefinitions>
@@ -40,15 +43,6 @@
                 <StackPanel Orientation="Horizontal" HorizontalAlignment="Left">
                     <Button Content="📁 Open PDF" Click="OpenPdf_Click" Width="100" Height="30" Margin="5,0" Background="#007ACC" Foreground="White" FontWeight="Bold" BorderThickness="0"/>
                     <Button Content="💾 Save As" Width="100" Height="30" Margin="5,0" Background="#E1E1E1" BorderThickness="0"/>
-                </StackPanel>
-
-                <!-- 🔍 Zoom Control Group (Centered in Toolbar) -->
-                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,0,10,0">
-                    <Button Content="➖" Click="ZoomOut_Click" Width="30" Height="30" Background="#F0F0F0" BorderBrush="#CCCCCC"/>
-                    <Slider x:Name="ZoomSlider" Width="150" Minimum="0.5" Maximum="3.0" Value="1.0" 
-                    TickFrequency="0.1" IsSnapToTickEnabled="True" VerticalAlignment="Center" Margin="10,0"
-                    ValueChanged="ZoomSlider_ValueChanged"/>
-                    <Button Content="➕" Click="ZoomIn_Click" Width="30" Height="30" Background="#F0F0F0" BorderBrush="#CCCCCC"/>
                 </StackPanel>
             </Grid>
         </Border>
@@ -113,15 +107,17 @@
         <StatusBar Grid.Row="3" Background="#FFFFFF" BorderBrush="#E0E0E0" BorderThickness="0,1,0,0" Padding="5,3">
             <StatusBar.ItemsPanel>
                 <ItemsPanelTemplate>
-                    <!-- Define clean, separated columns inside the status bar -->
+                    <!-- Expanded to 4 columns to fit the message, page label, slider, and percentage -->
                     <Grid>
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
                             <!-- Column 0: Left message panel -->
                             <ColumnDefinition Width="120"/>
-                            <!-- Column 1: Middle page label panel (Fixed width prevents overlaps) -->
-                            <ColumnDefinition Width="80"/>
-                            <!-- Column 2: Right zoom percentage panel -->
+                            <!-- Column 1: Middle page tracker -->
+                            <ColumnDefinition Width="220"/>
+                            <!-- Column 2: NEW! Slider + adjustment buttons -->
+                            <ColumnDefinition Width="70"/>
+                            <!-- Column 3: Right zoom percentage label -->
                         </Grid.ColumnDefinitions>
                     </Grid>
                 </ItemsPanelTemplate>
@@ -135,17 +131,30 @@
                 </StackPanel>
             </StatusBarItem>
 
-            <!-- Pane 2: Page Pane (Explicitly assigned to Column 1) -->
+            <!-- Pane 2: Page Pane (Column 1) -->
             <StatusBarItem Grid.Column="1" HorizontalAlignment="Center">
                 <Border BorderBrush="#E0E0E0" BorderThickness="1,0,0,0" Padding="10,0,10,0">
                     <TextBlock x:Name="TxtPageStatus" Text="Page 0 of 0" Foreground="#555555" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
                 </Border>
             </StatusBarItem>
 
-            <!-- Pane 3: Zoom Percentage Pane (Explicitly assigned to Column 2) -->
-            <StatusBarItem Grid.Column="2" HorizontalAlignment="Right" Margin="0,0,10,0">
+            <!-- 🔍 NEW Pane 3: Zoom Slider Control Group (Column 2) -->
+            <StatusBarItem Grid.Column="2" HorizontalAlignment="Center">
+                <Border BorderBrush="#E0E0E0" BorderThickness="1,0,0,0" Padding="10,0,10,0">
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <Button Content="➖" Click="ZoomOut_Click" Width="24" Height="24" Background="#F0F0F0" BorderBrush="#CCCCCC" FontSize="10" VerticalAlignment="Center"/>
+                        <Slider x:Name="ZoomSlider" Width="130" Minimum="0.5" Maximum="3.0" Value="1.0" 
+                        TickFrequency="0.1" IsSnapToTickEnabled="True" VerticalAlignment="Center" Margin="8,0"
+                        ValueChanged="ZoomSlider_ValueChanged"/>
+                        <Button Content="➕" Click="ZoomIn_Click" Width="24" Height="24" Background="#F0F0F0" BorderBrush="#CCCCCC" FontSize="10" VerticalAlignment="Center"/>
+                    </StackPanel>
+                </Border>
+            </StatusBarItem>
+
+            <!-- Pane 4: Zoom Percentage Pane (Column 3) -->
+            <StatusBarItem Grid.Column="3" HorizontalAlignment="Right" Margin="0,0,10,0">
                 <Border BorderBrush="#E0E0E0" BorderThickness="1,0,0,0" Padding="10,0,0,0">
-                    <TextBlock x:Name="TxtZoomStatus" Text="100%" Foreground="#555555" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" Width="50" TextAlignment="Right"/>
+                    <TextBlock x:Name="TxtZoomStatus" Text="100%" Foreground="#555555" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" Width="45" TextAlignment="Right"/>
                 </Border>
             </StatusBarItem>
         </StatusBar>
