@@ -19,6 +19,7 @@ namespace pdf_editor2.Models
         // Store lightweight layout data instead of heavy UI control trees
         public List<PdfWordData> WordsData { get; set; } = new List<PdfWordData>();
         public PdfStructureInfo Structure { get; set; }
+        public PdfPageStructure PageStructure { get; set; }
 
         public bool IsRendered
         {

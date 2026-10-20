@@ -1,10 +1,11 @@
-﻿using System;
-using System.Threading.Tasks;
-using System.Windows;
+﻿using pdf_editor2.Models;
+using System;
 using System.Collections.Generic;
 using System.Linq;
-using pdf_editor2.Models;
+using System.Threading.Tasks;
+using System.Windows;
 using UglyToad.PdfPig;
+using UglyToad.PdfPig.Tokens;
 
 namespace pdf_editor2.Services
 {
@@ -18,38 +19,34 @@ namespace pdf_editor2.Services
     {
         public event EventHandler<PageParsedEventArgs> OnPageParsed;
 
-        /// <summary>
-        /// Asynchronously reads document metadata and text layouts on a background thread.
-        /// </summary>
+        private readonly PdfPageResolver _pageResolver;
+
+        private readonly PdfPageCache _pageCache;
+
+        public PdfRenderEngine(PdfPageResolver pageResolver, PdfPageCache pageCache)
+        {
+            _pageResolver = pageResolver;
+            _pageCache = pageCache;
+        }
+
         public void StartStreamingDocument(string filePath)
         {
             Task.Run(() =>
             {
                 try
                 {
-                    // 1. Call decoupled static structural worker to read file primitives
                     PdfStructureInfo structureInfo = PdfStructureParser.ParseLowLevelStructure(filePath);
 
-                    // Open the document temporarily to extract page layout structural data
                     using (PdfDocument document = PdfDocument.Open(filePath))
                     {
                         int totalPages = document.NumberOfPages;
-
-                        if (document.Structure.Catalog.CatalogDictionary?.Data != null)
-                        {
-                            structureInfo.TotalObjectsCount = document.Structure.Catalog.CatalogDictionary.Data.Count;
-                        }
-                        else
-                        {
-                            structureInfo.TotalObjectsCount = document.NumberOfPages; // Fallback metric if token structure is null
-                        }
+                        structureInfo.TotalObjectsCount = document.Structure.Catalog.CatalogDictionary?.Data.Count ?? totalPages;
 
                         for (int i = 1; i <= totalPages; i++)
                         {
                             var page = document.GetPage(i);
                             double pageHeight = page.Height;
 
-                            // Extract text metadata into a lightweight POCO collection
                             var wordModels = page.GetWords().Select(word => new PdfWordData
                             {
                                 Text = word.Text,
@@ -57,6 +54,24 @@ namespace pdf_editor2.Services
                                 X = word.BoundingBox.Left,
                                 Y = pageHeight - word.BoundingBox.Top
                             }).ToList();
+
+                            // --- OPTIMIZED CACHED PIPELINE LAYER ---
+                            // Check cache map first to eliminate parsing overhead on reload
+                            PdfPageStructure pageStructure = _pageCache.Get(filePath, i);
+
+                            if (pageStructure == null && page.Dictionary is DictionaryToken dictToken)
+                            {
+                                var dictionaryWrapper = dictToken.Data.ToDictionary(
+                                    kvp => kvp.Key,
+                                    kvp => (object)kvp.Value
+                                );
+
+                                // Only execute structural resolution if cache missed
+                                pageStructure = _pageResolver.PreparePageObjects(dictionaryWrapper);
+
+                                // Hydrate the cache for subsequent UI view steps
+                                _pageCache.Put(filePath, i, pageStructure);
+                            }
 
                             var pageModel = new PdfPageViewModel
                             {
@@ -66,10 +81,10 @@ namespace pdf_editor2.Services
                                 FilePath = filePath,
                                 WordsData = wordModels,
                                 IsRendered = false,
-                                Structure = structureInfo // Attach shared low-level structural context
+                                Structure = structureInfo,
+                                PageStructure = pageStructure
                             };
 
-                            // Stream payload event outward to the UI thread sequentially
                             OnPageParsed?.Invoke(this, new PageParsedEventArgs
                             {
                                 PageViewModel = pageModel,

@@ -4,6 +4,18 @@ using System.Text;
 
 namespace pdf_editor2.Models
 {
+    public record PdfIndirectRef(int ObjectNumber, int Generation);
+
+    // Added explicit public modifier
+    public record PdfPageGeometry(double[] MediaBox, double[] CropBox);
+
+    public class PdfPageStructure
+    {
+        public PdfPageGeometry Geometry { get; set; }
+        public byte[] CombinedContentStream { get; set; }
+        public Dictionary<string, object> ResolvedResources { get; set; } = new();
+    }
+
     public class PdfStructureInfo
     {
         public string Header { get; set; }           // e.g., "%PDF-1.7"
