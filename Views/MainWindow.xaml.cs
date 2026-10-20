@@ -77,14 +77,14 @@ namespace pdf_editor2.Views
             {
                 string selectedFilePath = openFileDialog.FileName;
                 this.Title = $"PDF Editor - {selectedFilePath}";
-                TxtFilePath.Text = $"Active File:\n{selectedFilePath}";
+                PdfWorkspace.TxtFilePath.Text = $"Active File:\n{selectedFilePath}";
 
                 _totalDocumentPages = 0;
                 UpdatePageStatusLabel(0);
                 TxtStatusMessage.Text = "Opening document and preparing background skeleton streaming...";
 
                 _activePages.Clear();
-                PagesControl.ItemsSource = _activePages;
+                PdfWorkspace.PagesControl.ItemsSource = _activePages;
 
                 // ⚡ Step 1: Rapid Skeleton Extraction. Grabs sizes instantly without blocking UI thread.
                 var skeletons = _pdfService.InitializeSkeleton(selectedFilePath);
@@ -141,13 +141,13 @@ namespace pdf_editor2.Views
             }
 
             _activePages.Clear();
-            PagesControl.ItemsSource = null;
+            PdfWorkspace.PagesControl.ItemsSource = null;
             _totalDocumentPages = 0;
             UpdatePageStatusLabel(0);
 
             TxtStatusMessage.Text = "Ready";
             this.Title = "Nova PDF Editor";
-            TxtFilePath.Text = "No file loaded";
+            PdfWorkspace.TxtFilePath.Text = "No file loaded";
 
             GC.Collect();
             GC.WaitForPendingFinalizers();
@@ -155,10 +155,10 @@ namespace pdf_editor2.Views
 
         private void ZoomSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            if (WorkspaceScaleTransform == null || TxtZoomStatus == null) return;
+            if (PdfWorkspace.WorkspaceScaleTransform == null || TxtZoomStatus == null) return;
 
-            WorkspaceScaleTransform.ScaleX = e.NewValue;
-            WorkspaceScaleTransform.ScaleY = e.NewValue;
+            PdfWorkspace.WorkspaceScaleTransform.ScaleX = e.NewValue;
+            PdfWorkspace.WorkspaceScaleTransform.ScaleY = e.NewValue;
             TxtZoomStatus.Text = $"{Math.Round(e.NewValue * 100)}%";
         }
 
@@ -180,14 +180,14 @@ namespace pdf_editor2.Views
             try
             {
                 // PART A: PAGE TRACKING (FIXED AND FINISHED HIT TEST BLOCK)
-                Point testPoint = new Point(WorkspaceScrollViewer.ActualWidth / 2, 40);
-                HitTestResult hitResult = VisualTreeHelper.HitTest(WorkspaceScrollViewer, testPoint);
+                Point testPoint = new Point(PdfWorkspace.WorkspaceScrollViewer.ActualWidth / 2, 40);
+                HitTestResult hitResult = VisualTreeHelper.HitTest(PdfWorkspace.WorkspaceScrollViewer, testPoint);
 
                 if (hitResult != null && hitResult.VisualHit != null)
                 {
                     DependencyObject obj = hitResult.VisualHit;
 
-                    while (obj != null && obj != WorkspaceScrollViewer)
+                    while (obj != null && obj != PdfWorkspace.WorkspaceScrollViewer)
                     {
                         if (obj is FrameworkElement element && element.DataContext is PdfPageViewModel pageModel)
                         {
@@ -214,12 +214,12 @@ namespace pdf_editor2.Views
         /// </summary>
         private async Task ProcessViewportLoadingAsync()
         {
-            double currentScrollTop = WorkspaceScrollViewer.VerticalOffset;
-            double currentViewportHeight = WorkspaceScrollViewer.ViewportHeight;
+            double currentScrollTop = PdfWorkspace.WorkspaceScrollViewer.VerticalOffset;
+            double currentViewportHeight = PdfWorkspace.WorkspaceScrollViewer.ViewportHeight;
             double currentScrollBottom = currentScrollTop + currentViewportHeight;
 
             // Get current scale factor from your transformation UI component
-            double currentZoomFactor = WorkspaceScaleTransform?.ScaleY ?? 1.0;
+            double currentZoomFactor = PdfWorkspace.WorkspaceScaleTransform?.ScaleY ?? 1.0;
             double accumulatedHeight = 0;
 
             foreach (PdfPageViewModel page in _activePages)

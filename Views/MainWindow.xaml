@@ -4,6 +4,7 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:pdf_editor2"
+        xmlns:views="clr-namespace:pdf_editor2.Views"
         mc:Ignorable="d"
         Title="PDF Editor" Height="650" Width="900"
         WindowStartupLocation = "CenterScreen"
@@ -48,60 +49,7 @@
         </Border>
         
         <!-- ROW 2: MAIN WORKSPACE SPLIT (Enforces explicit boundaries inside Row 2) -->
-        <Grid Grid.Row="2">
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="220"/>
-                <!-- Sidebar Column -->
-                <ColumnDefinition Width="*"/>
-                <!-- Main Viewer Column -->
-            </Grid.ColumnDefinitions>
-
-            <!-- Left Sidebar Panel -->
-            <Border Grid.Column="0" Background="#F9F9F9" BorderBrush="#E0E0E0" BorderThickness="0,0,1,0">
-                <StackPanel Margin="10">
-                    <TextBlock Text="Document Properties" FontSize="14" FontWeight="Bold" Foreground="#333333" Margin="0,0,0,10"/>
-                    <TextBlock x:Name="TxtFilePath" Text="No file loaded" TextWrapping="Wrap" Foreground="#666666" FontSize="11"/>
-                </StackPanel>
-            </Border>
-
-            <!-- Central Multi-Page View Container -->
-            <ScrollViewer x:Name="WorkspaceScrollViewer" Grid.Column="1" 
-              HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" 
-              Background="#E5E5E5" ScrollChanged="WorkspaceScrollViewer_ScrollChanged">
-
-                <!-- 📁 FIXED: Attach the LayoutTransform directly onto the main PagesControl container -->
-                <ItemsControl x:Name="PagesControl" Margin="20"
-                  VirtualizingStackPanel.IsVirtualizing="True"
-                  VirtualizingStackPanel.VirtualizationMode="Recycling"
-                  ScrollViewer.CanContentScroll="True">
-
-                    <!-- Moving it here makes 'WorkspaceScaleTransform' globally visible to C# -->
-                    <ItemsControl.LayoutTransform>
-                        <ScaleTransform x:Name="WorkspaceScaleTransform" ScaleX="1.0" ScaleY="1.0"/>
-                    </ItemsControl.LayoutTransform>
-
-                    <ItemsControl.ItemsPanel>
-                        <ItemsPanelTemplate>
-                            <VirtualizingStackPanel/>
-                        </ItemsPanelTemplate>
-                    </ItemsControl.ItemsPanel>
-
-                    <ItemsControl.ItemTemplate>
-                        <DataTemplate>
-                            <Border Background="White" Margin="0,15" CornerRadius="2" Width="{Binding Width}" Height="{Binding Height}">
-                                <Border.Effect>
-                                    <DropShadowEffect BlurRadius="8" Color="#BBBBBB" ShadowDepth="1"/>
-                                </Border.Effect>
-                                <Grid>
-                                    <Image Source="{Binding BackgroundImage}" Stretch="Uniform"/>
-                                    <ContentControl Content="{Binding ComponentCanvas}"/>
-                                </Grid>
-                            </Border>
-                        </DataTemplate>
-                    </ItemsControl.ItemTemplate>
-                </ItemsControl>
-            </ScrollViewer>
-        </Grid>
+        <views:PdfWorkspaceView x:Name="PdfWorkspace" Grid.Row="2"/>
 
         <!-- ROW 3: BOTTOM WINDOWS STATUS BAR -->
         <StatusBar Grid.Row="3" Background="#FFFFFF" BorderBrush="#E0E0E0" BorderThickness="0,1,0,0" Padding="5,3">
