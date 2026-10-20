@@ -15,4 +15,8 @@
     <PackageReference Include="PDFtoImage" Version="5.4.0" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Viewws\" />
+  </ItemGroup>
+
 </Project>
