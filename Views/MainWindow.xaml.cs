@@ -11,7 +11,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 
-namespace pdf_editor2
+namespace pdf_editor2.Views
 {
     public partial class MainWindow : Window
     {
