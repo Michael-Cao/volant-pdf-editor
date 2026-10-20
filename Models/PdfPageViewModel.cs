@@ -1,7 +1,8 @@
 ﻿using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using System.Windows.Controls;
 using System.Windows.Media.Imaging;
+using System.Collections.Generic;
+using pdf_editor2.Services; // Ensure this points to where PdfWordData is located
 
 namespace pdf_editor2.Models
 {
@@ -14,7 +15,9 @@ namespace pdf_editor2.Models
         public double Width { get; set; }
         public double Height { get; set; }
         public string FilePath { get; set; }
-        public Canvas ComponentCanvas { get; set; }
+
+        // Store lightweight layout data instead of heavy UI control trees
+        public List<PdfWordData> WordsData { get; set; } = new List<PdfWordData>();
 
         public bool IsRendered
         {

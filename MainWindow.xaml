@@ -28,7 +28,7 @@
                 <MenuItem Header="_Open PDF..." Click="OpenPdf_Click" InputGestureText="Ctrl+O"/>
                 <MenuItem Header="_Close File" Click="ClosePdf_Click" InputGestureText="Ctrl+W"/>
                 <Separator/>
-                <MenuItem Header="_Save" InputGestureText="Ctrl+S"/>
+                <MenuItem Header="_Save" Click="SavePdf_Click" InputGestureText="Ctrl+S"/>
                 <MenuItem Header="Save _As..."/>
                 <Separator/>
                 <MenuItem Header="_Exit" Click="ExitApp_Click"/>

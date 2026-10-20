@@ -3,6 +3,9 @@ using pdf_editor2.Models;
 using pdf_editor2.Services;
 using System;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Reflection;
+using System.Security.AccessControl;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Input;
@@ -12,40 +15,35 @@ namespace pdf_editor2
 {
     public partial class MainWindow : Window
     {
-        private readonly PdfRenderEngine _renderEngine = new PdfRenderEngine();
+        // ⚡ Decoupled Service Layer for memory-optimized streaming & rendering
+        private readonly PdfService _pdfService = new PdfService();
         private ObservableCollection<PdfPageViewModel> _activePages = new ObservableCollection<PdfPageViewModel>();
 
-        // Tracks the overall total file capacity count locally
         private int _totalDocumentPages = 0;
 
         public MainWindow()
         {
             InitializeComponent();
-            _renderEngine.OnPageParsed += RenderEngine_OnPageParsed;
         }
 
         private void Window_KeyDown(object sender, KeyEventArgs e)
         {
-            // Check if the Control key is currently being pressed down
             if (Keyboard.Modifiers == ModifierKeys.Control)
             {
                 switch (e.Key)
                 {
-                    // ➕ ZOOM IN SHORTCUTS (Supports standard '=' key, Shifted '+' key, and Numpad Add)
                     case Key.OemPlus:
                     case Key.Add:
-                        e.Handled = true; // Prevents the keypress from triggering typing events
+                        e.Handled = true;
                         ZoomSlider.Value = Math.Min(ZoomSlider.Maximum, ZoomSlider.Value + 0.1);
                         break;
 
-                    // ➖ ZOOM OUT SHORTCUTS (Supports standard '-' key and Numpad Subtract)
                     case Key.OemMinus:
                     case Key.Subtract:
                         e.Handled = true;
                         ZoomSlider.Value = Math.Max(ZoomSlider.Minimum, ZoomSlider.Value - 0.1);
                         break;
 
-                    // 🎯 OPTIONAL: Ctrl + 0 resets zoom back to 100% standard layout
                     case Key.D0:
                     case Key.NumPad0:
                         e.Handled = true;
@@ -57,26 +55,21 @@ namespace pdf_editor2
 
         private void Window_PreviewMouseWheel(object sender, MouseWheelEventArgs e)
         {
-            // Check if the Control key is physically held down during the mouse roll event
             if (Keyboard.Modifiers == ModifierKeys.Control)
             {
-                // Mark the event as handled to stop the ScrollViewer from jumping up/down vertically
                 e.Handled = true;
-
                 if (e.Delta > 0)
                 {
-                    // 🔄 Roll Up -> Zoom In (Increment scale by 10% blocks)
                     ZoomSlider.Value = Math.Min(ZoomSlider.Maximum, ZoomSlider.Value + 0.1);
                 }
                 else if (e.Delta < 0)
                 {
-                    // 🔄 Roll Down -> Zoom Out (Decrement scale by 10% blocks)
                     ZoomSlider.Value = Math.Max(ZoomSlider.Minimum, ZoomSlider.Value - 0.1);
                 }
             }
         }
 
-        private void OpenPdf_Click(object sender, RoutedEventArgs e)
+        private async void OpenPdf_Click(object sender, RoutedEventArgs e)
         {
             OpenFileDialog openFileDialog = new OpenFileDialog { Filter = "PDF Files (*.pdf)|*.pdf" };
 
@@ -88,51 +81,71 @@ namespace pdf_editor2
 
                 _totalDocumentPages = 0;
                 UpdatePageStatusLabel(0);
-
-                // ⚡ Update Message Pane right as parsing begins
-                TxtStatusMessage.Text = "Opening document and preparing background stream engine...";
+                TxtStatusMessage.Text = "Opening document and preparing background skeleton streaming...";
 
                 _activePages.Clear();
                 PagesControl.ItemsSource = _activePages;
 
-                _renderEngine.StartStreamingDocument(selectedFilePath);
+                // ⚡ Step 1: Rapid Skeleton Extraction. Grabs sizes instantly without blocking UI thread.
+                var skeletons = _pdfService.InitializeSkeleton(selectedFilePath);
+                _totalDocumentPages = skeletons.Count;
+
+                foreach (var pageSkeleton in skeletons)
+                {
+                    _activePages.Add(pageSkeleton);
+                }
+
+                TxtStatusMessage.Text = $"Loaded {_totalDocumentPages} page placeholder skeletons. Rendering visible viewports...";
+
+                // ⚡ Step 2: Explicitly force an initial viewport check after loading items into the collection
+                await ProcessViewportLoadingAsync();
             }
         }
 
-        private void RenderEngine_OnPageParsed(object sender, PageParsedEventArgs e)
+        private async void SavePdf_Click(object sender, RoutedEventArgs e)
         {
-            Application.Current.Dispatcher.Invoke(() =>
+            if (_activePages.Count == 0)
             {
-                _activePages.Add(e.PageViewModel);
-                _totalDocumentPages = e.TotalPages;
+                MessageBox.Show("No active document loaded to save.", "Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+                return;
+            }
 
-                // ⚡ Update Message Pane dynamically as each page streams in
-                if (_activePages.Count < _totalDocumentPages)
-                {
-                    TxtStatusMessage.Text = $"Streaming page {_activePages.Count} of {_totalDocumentPages}... (UI is active)";
-                }
-                else
-                {
-                    TxtStatusMessage.Text = "Document loading complete. Ready to edit.";
-                }
+            SaveFileDialog saveFileDialog = new SaveFileDialog { Filter = "PDF Files (*.pdf)|*.pdf" };
 
-                if (_activePages.Count == 1 || WorkspaceScrollViewer.VerticalOffset == 0)
+            if (saveFileDialog.ShowDialog() == true)
+            {
+                try
                 {
-                    UpdatePageStatusLabel(1);
+                    TxtStatusMessage.Text = "Compiling vector data structures into native PDF blocks...";
+
+                    // Execute the background saving operation
+                    await _pdfService.SaveDocumentAsync(saveFileDialog.FileName, _activePages);
+
+                    TxtStatusMessage.Text = "Document saved successfully as a searchable, vector PDF.";
+                    MessageBox.Show("File exported clean without image flattening!", "Save Complete", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
-            });
+                catch (Exception ex)
+                {
+                    TxtStatusMessage.Text = "Save pipeline aborted due to file locks or engine syntax errors.";
+                    MessageBox.Show($"Export error encountered: {ex.Message}", "Export Failure", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
         }
 
         private void ClosePdf_Click(object sender, RoutedEventArgs e)
         {
+            // Clear page states explicitly to drop heavy unmanaged memory streams instantly
+            foreach (var page in _activePages)
+            {
+                _pdfService.UnloadPageFromMemory(page);
+            }
+
             _activePages.Clear();
             PagesControl.ItemsSource = null;
             _totalDocumentPages = 0;
             UpdatePageStatusLabel(0);
 
-            // ⚡ Reset message pane on close
             TxtStatusMessage.Text = "Ready";
-
             this.Title = "Nova PDF Editor";
             TxtFilePath.Text = "No file loaded";
 
@@ -140,74 +153,106 @@ namespace pdf_editor2
             GC.WaitForPendingFinalizers();
         }
 
-        // ⚡ Triggers smoothly as the slider shifts or buttons tweak values
         private void ZoomSlider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
         {
-            // Check initialization boundaries to prevent loading crashes
             if (WorkspaceScaleTransform == null || TxtZoomStatus == null) return;
 
-            // Apply the scaling factors to our workspace layout transformation layer
             WorkspaceScaleTransform.ScaleX = e.NewValue;
             WorkspaceScaleTransform.ScaleY = e.NewValue;
-
-            // Output human-readable percentage metric text (e.g., 1.5 -> "150%")
             TxtZoomStatus.Text = $"{Math.Round(e.NewValue * 100)}%";
         }
 
-        // ➖ Decrements scale layout by 10% blocks
         private void ZoomOut_Click(object sender, RoutedEventArgs e)
         {
             ZoomSlider.Value = Math.Max(ZoomSlider.Minimum, ZoomSlider.Value - 0.1);
         }
 
-        // ➕ Increments scale layout by 10% blocks
         private void ZoomIn_Click(object sender, RoutedEventArgs e)
         {
             ZoomSlider.Value = Math.Min(ZoomSlider.Maximum, ZoomSlider.Value + 0.1);
         }
 
-        // ⚡ ACTIVE SCROLL CALCULATOR: Triggers dynamically whenever the mouse wheel spins
-        private void WorkspaceScrollViewer_ScrollChanged(object sender, ScrollChangedEventArgs e)
+        // ⚡ DUAL-PURPOSE VIEWPORT SCROLLER & MEMORY MANAGER
+        private async void WorkspaceScrollViewer_ScrollChanged(object sender, ScrollChangedEventArgs e)
         {
             if (_activePages.Count == 0 || _totalDocumentPages == 0) return;
 
             try
             {
-                // 1. Define a target point near the top-center of our ScrollViewer window zone
-                // This acts like a virtual scanning laser line checking what page passes underneath it
+                // PART A: PAGE TRACKING (FIXED AND FINISHED HIT TEST BLOCK)
                 Point testPoint = new Point(WorkspaceScrollViewer.ActualWidth / 2, 40);
-
-                // 2. Perform a Hit Test to find what visual element is physically sitting at that point
                 HitTestResult hitResult = VisualTreeHelper.HitTest(WorkspaceScrollViewer, testPoint);
 
                 if (hitResult != null && hitResult.VisualHit != null)
                 {
                     DependencyObject obj = hitResult.VisualHit;
 
-                    // 3. Walk up the visual layout nesting tree to locate our FrameworkElement page block container
                     while (obj != null && obj != WorkspaceScrollViewer)
                     {
-                        // Check if this layout item is currently holding one of our PdfPageViewModel models
                         if (obj is FrameworkElement element && element.DataContext is PdfPageViewModel pageModel)
                         {
                             int detectedPageNum = pageModel.PageNumber;
-
-                            // Constrain the result within valid document bounds and update label
                             int clampedPageNum = Math.Clamp(detectedPageNum, 1, _totalDocumentPages);
-                            UpdatePageStatusLabel(clampedPageNum);
-                            return;
-                        }
 
-                        // Keep climbing up the parent layout tree
+                            // Native framework layout helper invocation
+                            UpdatePageStatusLabel(clampedPageNum);
+                            break;
+                        }
                         obj = VisualTreeHelper.GetParent(obj);
                     }
                 }
+
+                // PART B: MEMORY MANAGER (ON-DEMAND RENDERING & ACTIVE RECYCLING)
+                await ProcessViewportLoadingAsync();
             }
-            catch
+            catch { /* Maintain structural thread stability rules safely */ }
+        }
+
+        /// <summary>
+        /// Scans the vertical viewport boundary, triggering asynchronous background renders 
+        /// for visible pages, while immediately purging off-screen page allocations.
+        /// </summary>
+        private async Task ProcessViewportLoadingAsync()
+        {
+            double currentScrollTop = WorkspaceScrollViewer.VerticalOffset;
+            double currentViewportHeight = WorkspaceScrollViewer.ViewportHeight;
+            double currentScrollBottom = currentScrollTop + currentViewportHeight;
+
+            // Get current scale factor from your transformation UI component
+            double currentZoomFactor = WorkspaceScaleTransform?.ScaleY ?? 1.0;
+            double accumulatedHeight = 0;
+
+            foreach (PdfPageViewModel page in _activePages)
             {
-                // Fallback to basic offset calculation if layout is temporarily measuring/redrawing
-                int fallbackIndex = (int)Math.Clamp(Math.Round(WorkspaceScrollViewer.VerticalOffset) + 1, 1, _totalDocumentPages);
-                UpdatePageStatusLabel(fallbackIndex);
+                // Calculate actual UI scale metrics factoring in the slider's zoom value
+                double scaledPageHeight = (page.Height * currentZoomFactor);
+
+                // Assuming an item margin inside your XAML template. Adjust the '20' if your Margin varies.
+                double itemMarginCompensation = 20 * currentZoomFactor;
+
+                double pageTopOffset = accumulatedHeight;
+                double pageBottomOffset = pageTopOffset + scaledPageHeight + itemMarginCompensation;
+                accumulatedHeight = pageBottomOffset;
+
+                // Matrix intersection formula evaluating if the page block intercepts viewable scopes
+                bool isPageCurrentlyVisible = (pageTopOffset < currentScrollBottom) && (pageBottomOffset > currentScrollTop);
+
+                if (isPageCurrentlyVisible)
+                {
+                    // Viewport entrance hook: Render on-demand asynchronously if skipped or unloaded
+                    if (!page.IsRendered)
+                    {
+                        await _pdfService.RenderPageBackgroundAsync(page);
+                    }
+                }
+                else
+                {
+                    // Viewport exit hook: Clean background textures and layout strings out of RAM instantly
+                    if (page.IsRendered)
+                    {
+                        _pdfService.UnloadPageFromMemory(page);
+                    }
+                }
             }
         }
 
