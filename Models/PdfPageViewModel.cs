@@ -2,7 +2,7 @@
 using System.Runtime.CompilerServices;
 using System.Windows.Media.Imaging;
 using System.Collections.Generic;
-using pdf_editor2.Services; // Ensure this points to where PdfWordData is located
+using pdf_editor2.Services;
 
 namespace pdf_editor2.Models
 {
@@ -18,6 +18,7 @@ namespace pdf_editor2.Models
 
         // Store lightweight layout data instead of heavy UI control trees
         public List<PdfWordData> WordsData { get; set; } = new List<PdfWordData>();
+        public PdfStructureInfo Structure { get; set; }
 
         public bool IsRendered
         {
