@@ -24,19 +24,28 @@
         </Border>
 
         <!-- Central Multi-Page View Container -->
-        <ScrollViewer x:Name="WorkspaceScrollViewer" Grid.Column="1" 
-      HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto" 
-      Background="#E5E5E5" ScrollChanged="WorkspaceScrollViewer_ScrollChanged">
+        <ScrollViewer x:Name="WorkspaceScrollViewer" 
+                      Grid.Column="1" 
+                      HorizontalScrollBarVisibility="Auto" 
+                      VerticalScrollBarVisibility="Auto" 
+                      Background="#E5E5E5" 
+                      ScrollChanged="WorkspaceScrollViewer_ScrollChanged"
+                      >
 
             <!-- 📁 FIXED: Attach the LayoutTransform directly onto the main PagesControl container -->
-            <ItemsControl x:Name="PagesControl" Margin="20"
-          VirtualizingStackPanel.IsVirtualizing="True"
-          VirtualizingStackPanel.VirtualizationMode="Recycling"
-          ScrollViewer.CanContentScroll="True">
+            <ItemsControl x:Name="PagesControl" 
+                          Margin="20"
+                          ItemsSource="{Binding ActivePages}"
+                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                          ScrollViewer.VerticalScrollBarVisibility="Auto"
+                          VirtualizingStackPanel.IsVirtualizing="True"
+                          VirtualizingStackPanel.VirtualizationMode="Recycling"
+                          VirtualizingStackPanel.CacheLengthUnit="Item"
+                          VirtualizingStackPanel.CacheLength="1,2">
 
                 <!-- Moving it here makes 'WorkspaceScaleTransform' globally visible to C# -->
                 <ItemsControl.LayoutTransform>
-                    <ScaleTransform x:Name="WorkspaceScaleTransform" ScaleX="1.0" ScaleY="1.0"/>
+                    <ScaleTransform ScaleX="{Binding ZoomFactor}" ScaleY="{Binding ZoomFactor}"/>
                 </ItemsControl.LayoutTransform>
 
                 <ItemsControl.ItemsPanel>
@@ -47,13 +56,23 @@
 
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <Border Background="White" Margin="0,15" CornerRadius="2" Width="{Binding Width}" Height="{Binding Height}">
-                            <Border.Effect>
-                                <DropShadowEffect BlurRadius="8" Color="#BBBBBB" ShadowDepth="1"/>
-                            </Border.Effect>
+                        <Border Width="{Binding Width}" 
+                        Height="{Binding Height}" 
+                        Margin="0,10,0,10" 
+                        Background="White" 
+                        CornerRadius="2"
+                        Loaded="PageElement_Loaded" 
+                        Unloaded="PageElement_Unloaded">
                             <Grid>
+                                <!-- Main Render Canvas -->
                                 <Image Source="{Binding BackgroundImage}" Stretch="Uniform"/>
-                                <ContentControl Content="{Binding ComponentCanvas}"/>
+
+                                <!-- Placeholder Loading Indicator (Only shows when image is missing) -->
+                                <TextBlock Text="Loading Page Vector Maps..." 
+                                   HorizontalAlignment="Center" 
+                                   VerticalAlignment="Center" 
+                                   Foreground="DarkGray"
+                                   Visibility="{Binding IsRendered, Converter={StaticResource InverseBooleanToVisibilityConverter}}"/>
                             </Grid>
                         </Border>
                     </DataTemplate>

@@ -49,62 +49,10 @@
         </Border>
         
         <!-- ROW 2: MAIN WORKSPACE SPLIT (Enforces explicit boundaries inside Row 2) -->
-        <views:PdfWorkspaceView x:Name="PdfWorkspace" Grid.Row="2"/>
+        <ContentControl x:Name="WorkspaceHost" Grid.Row="2"/>
 
         <!-- ROW 3: BOTTOM WINDOWS STATUS BAR -->
-        <StatusBar Grid.Row="3" Background="#FFFFFF" BorderBrush="#E0E0E0" BorderThickness="0,1,0,0" Padding="5,3">
-            <StatusBar.ItemsPanel>
-                <ItemsPanelTemplate>
-                    <!-- Expanded to 4 columns to fit the message, page label, slider, and percentage -->
-                    <Grid>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <!-- Column 0: Left message panel -->
-                            <ColumnDefinition Width="120"/>
-                            <!-- Column 1: Middle page tracker -->
-                            <ColumnDefinition Width="220"/>
-                            <!-- Column 2: NEW! Slider + adjustment buttons -->
-                            <ColumnDefinition Width="70"/>
-                            <!-- Column 3: Right zoom percentage label -->
-                        </Grid.ColumnDefinitions>
-                    </Grid>
-                </ItemsPanelTemplate>
-            </StatusBar.ItemsPanel>
+        <views:PdfStatusBarView x:Name="PdfStatusBar" Grid.Row="3"/>
 
-            <!-- Pane 1: Message Pane (Left-aligned) -->
-            <StatusBarItem Grid.Column="0" HorizontalAlignment="Left">
-                <StackPanel Orientation="Horizontal">
-                    <TextBlock Text="ℹ️" Margin="0,0,5,0" FontSize="11" VerticalAlignment="Center"/>
-                    <TextBlock x:Name="TxtStatusMessage" Text="Ready" Foreground="#555555" FontSize="12" VerticalAlignment="Center"/>
-                </StackPanel>
-            </StatusBarItem>
-
-            <!-- Pane 2: Page Pane (Column 1) -->
-            <StatusBarItem Grid.Column="1" HorizontalAlignment="Center">
-                <Border BorderBrush="#E0E0E0" BorderThickness="1,0,0,0" Padding="10,0,10,0">
-                    <TextBlock x:Name="TxtPageStatus" Text="Page 0 of 0" Foreground="#555555" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center"/>
-                </Border>
-            </StatusBarItem>
-
-            <!-- 🔍 NEW Pane 3: Zoom Slider Control Group (Column 2) -->
-            <StatusBarItem Grid.Column="2" HorizontalAlignment="Center">
-                <Border BorderBrush="#E0E0E0" BorderThickness="1,0,0,0" Padding="10,0,10,0">
-                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
-                        <Button Content="➖" Click="ZoomOut_Click" Width="24" Height="24" Background="#F0F0F0" BorderBrush="#CCCCCC" FontSize="10" VerticalAlignment="Center"/>
-                        <Slider x:Name="ZoomSlider" Width="130" Minimum="0.5" Maximum="3.0" Value="1.0" 
-                        TickFrequency="0.1" IsSnapToTickEnabled="True" VerticalAlignment="Center" Margin="8,0"
-                        ValueChanged="ZoomSlider_ValueChanged"/>
-                        <Button Content="➕" Click="ZoomIn_Click" Width="24" Height="24" Background="#F0F0F0" BorderBrush="#CCCCCC" FontSize="10" VerticalAlignment="Center"/>
-                    </StackPanel>
-                </Border>
-            </StatusBarItem>
-
-            <!-- Pane 4: Zoom Percentage Pane (Column 3) -->
-            <StatusBarItem Grid.Column="3" HorizontalAlignment="Right" Margin="0,0,10,0">
-                <Border BorderBrush="#E0E0E0" BorderThickness="1,0,0,0" Padding="10,0,0,0">
-                    <TextBlock x:Name="TxtZoomStatus" Text="100%" Foreground="#555555" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" Width="45" TextAlignment="Right"/>
-                </Border>
-            </StatusBarItem>
-        </StatusBar>
     </Grid>
 </Window>

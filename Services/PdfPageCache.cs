@@ -33,6 +33,15 @@ namespace pdf_editor2.Services
         }
 
         /// <summary>
+        /// Removes a single page from the thread-safe map.
+        /// </summary>
+        public void Remove(string filePath, int pageNumber)
+        {
+            string cacheKey = GenerateKey(filePath, pageNumber);
+            _cacheMap.TryRemove(cacheKey, out _);
+        }
+
+        /// <summary>
         /// Clears out memory mappings for closed documents.
         /// </summary>
         public void ClearDocumentCache(string filePath)

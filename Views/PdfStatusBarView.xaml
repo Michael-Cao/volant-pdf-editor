@@ -1,0 +1,73 @@
+﻿<UserControl x:Class="pdf_editor2.Views.PdfStatusBarView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:pdf_editor2.Views"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="800">
+
+    <StatusBar x:Name="PdfStatusBar" Grid.Row="0" Background="#FFFFFF" BorderBrush="#E0E0E0" BorderThickness="0,1,0,0" Padding="5,3">
+        <StatusBar.ItemsPanel>
+            <ItemsPanelTemplate>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="120"/>
+                        <ColumnDefinition Width="220"/>
+                        <ColumnDefinition Width="70"/>
+                    </Grid.ColumnDefinitions>
+                </Grid>
+            </ItemsPanelTemplate>
+        </StatusBar.ItemsPanel>
+
+        <!-- Pane 1: Message Pane (Left-aligned) -->
+        <StatusBarItem Grid.Column="0" HorizontalAlignment="Left">
+            <StackPanel Orientation="Horizontal">
+                <TextBlock Text="ℹ️" Margin="0,0,5,0" FontSize="11" VerticalAlignment="Center"/>
+                <!-- ⚡ FIXED: Bound directly to MainViewModel's StatusMessage -->
+                <TextBlock x:Name="TxtStatusMessage" 
+                           Text="{Binding StatusMessage, FallbackValue=Ready}" 
+                           Foreground="#555555" FontSize="12" VerticalAlignment="Center"/>
+            </StackPanel>
+        </StatusBarItem>
+
+        <!-- Pane 2: Page Pane (Column 1) -->
+        <StatusBarItem Grid.Column="1" HorizontalAlignment="Center">
+            <Border BorderBrush="#E0E0E0" BorderThickness="1,0,0,0" Padding="10,0,10,0">
+                <!-- ⚡ FIXED: Employs a clean MultiBinding pulling from the Workspace ViewModel properties -->
+                <TextBlock x:Name="TxtPageStatus" Foreground="#555555" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center">
+                    <TextBlock.Text>
+                        <MultiBinding StringFormat="Page {0} of {1}">
+                            <Binding Path="Workspace.CurrentPageNumber" FallbackValue="0"/>
+                            <Binding Path="Workspace.TotalDocumentPages" FallbackValue="0"/>
+                        </MultiBinding>
+                    </TextBlock.Text>
+                </TextBlock>
+            </Border>
+        </StatusBarItem>
+
+        <!-- Pane 3: Zoom Slider Control Group (Column 2) -->
+        <StatusBarItem Grid.Column="2" HorizontalAlignment="Center">
+            <Border BorderBrush="#E0E0E0" BorderThickness="1,0,0,0" Padding="10,0,10,0">
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <Button Content="➖" Click="ZoomOut_Click" Width="24" Height="24" Background="#F0F0F0" BorderBrush="#CCCCCC" FontSize="10" VerticalAlignment="Center"/>
+                    <!-- ⚡ OPTIMIZED: Synchronize the slider value to track the same data-bound property -->
+                    <Slider x:Name="ZoomSlider" Width="130" Minimum="0.5" Maximum="3.0" 
+                            Value="{Binding Workspace.ZoomFactor, Mode=TwoWay}" 
+                            TickFrequency="0.1" IsSnapToTickEnabled="True" VerticalAlignment="Center" Margin="8,0"
+                            ValueChanged="ZoomSlider_ValueChanged"/>
+                    <Button Content="➕" Click="ZoomIn_Click" Width="24" Height="24" Background="#F0F0F0" BorderBrush="#CCCCCC" FontSize="10" VerticalAlignment="Center"/>
+                </StackPanel>
+            </Border>
+        </StatusBarItem>
+
+        <!-- Pane 4: Zoom Percentage Pane (Column 3) -->
+        <StatusBarItem Grid.Column="3" HorizontalAlignment="Right" Margin="0,0,10,0">
+            <Border BorderBrush="#E0E0E0" BorderThickness="1,0,0,0" Padding="10,0,0,0">
+                <TextBlock x:Name="TxtZoomStatus" Text="100%" Foreground="#555555" FontSize="12" FontWeight="SemiBold" VerticalAlignment="Center" Width="45" TextAlignment="Right"/>
+            </Border>
+        </StatusBarItem>
+    </StatusBar>
+
+</UserControl>

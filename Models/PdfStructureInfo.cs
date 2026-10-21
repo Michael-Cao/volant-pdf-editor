@@ -9,12 +9,12 @@ namespace pdf_editor2.Models
     // Added explicit public modifier
     public record PdfPageGeometry(double[] MediaBox, double[] CropBox);
 
-    public class PdfPageStructure
-    {
-        public PdfPageGeometry Geometry { get; set; }
-        public byte[] CombinedContentStream { get; set; }
-        public Dictionary<string, object> ResolvedResources { get; set; } = new();
-    }
+    //public class PdfPageStructure
+    //{
+    //    public PdfPageGeometry Geometry { get; set; }
+    //    public byte[] CombinedContentStream { get; set; }
+    //    public Dictionary<string, object> ResolvedResources { get; set; } = new();
+    //}
 
     public class PdfStructureInfo
     {
