@@ -27,7 +27,7 @@ public class PdfService
 
         // Delegate the heavy background lifting entirely to the engine layer
         // We pass the page object along or map it cleanly down via matching keys
-        await _renderEngine.ParsePageAsync(pageModel.FilePath, pageModel.PageNumber);
+        await _renderEngine.RenderAndParsePageAsync(pageModel.FilePath, pageModel.PageNumber);
     }
 
     public List<PdfPageViewModel> CreateDocumentSkeleton(string filePath)

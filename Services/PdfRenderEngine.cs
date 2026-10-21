@@ -153,6 +153,14 @@ namespace pdf_editor2.Services
 
 
         /// <summary>
+        /// Removes one rendered page from the in-memory cache.
+        /// </summary>
+        public void EvictFromCache(string filePath, int pageNumber)
+        {
+            _pageCache.Remove(filePath, pageNumber);
+        }
+
+        /// <summary>
         /// Cleans unmanaged memory files and releases OS locks instantly on demand.
         /// </summary>
         public void CloseDocumentHandle()
@@ -164,11 +172,6 @@ namespace pdf_editor2.Services
                 _activeDocument = null;
             }
             _activeFilePath = null;
-        }
-
-        public void EvictFromCache(string filePath, int pageNumber)
-        {
-            _pageCache.ClearDocumentCache(filePath);
         }
 
         public void Dispose()
