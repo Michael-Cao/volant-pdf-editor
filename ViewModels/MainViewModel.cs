@@ -20,9 +20,13 @@ namespace pdf_editor2.ViewModels
             set => SetProperty(ref _statusMessage, value);
         }
 
-        public MainViewModel(PdfWorkspaceViewModel workspaceViewModel, PdfService pdfService)
+        private readonly DiagnosticsViewModel _diagnostics;
+        public DiagnosticsViewModel Diagnostics => _diagnostics;
+
+        public MainViewModel(PdfWorkspaceViewModel workspaceViewModel, DiagnosticsViewModel diagnostics, PdfService pdfService)
         {
             Workspace = workspaceViewModel;
+            _diagnostics = diagnostics;
             _pdfService = pdfService;
         }
 

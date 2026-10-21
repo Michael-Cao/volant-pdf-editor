@@ -87,6 +87,12 @@ namespace pdf_editor2.Views
         private async void OpenPdf_Click(object sender, RoutedEventArgs e)
         {
             ViewModel?.HandleOpenFileExecution();
+
+            if (WorkspaceHost != null)
+            {
+                WorkspaceHost.Focus();
+                Keyboard.Focus(WorkspaceHost);
+            }
         }
 
         private async void SavePdf_Click(object sender, RoutedEventArgs e)

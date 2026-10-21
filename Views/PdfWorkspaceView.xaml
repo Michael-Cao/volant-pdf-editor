@@ -7,78 +7,61 @@
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
 
-    <Grid Grid.Row="2">
-        <Grid.ColumnDefinitions>
-            <ColumnDefinition Width="220"/>
-            <!-- Sidebar Column -->
-            <ColumnDefinition Width="*"/>
-            <!-- Main Viewer Column -->
-        </Grid.ColumnDefinitions>
+    <!-- Central Multi-Page View Container -->
+    <ScrollViewer x:Name="WorkspaceScrollViewer" 
+                    Grid.Column="1" 
+                    HorizontalScrollBarVisibility="Auto" 
+                    VerticalScrollBarVisibility="Auto" 
+                    Background="#E5E5E5" 
+                    ScrollChanged="WorkspaceScrollViewer_ScrollChanged"
+                    >
 
-        <!-- Left Sidebar Panel -->
-        <Border Grid.Column="0" Background="#F9F9F9" BorderBrush="#E0E0E0" BorderThickness="0,0,1,0">
-            <StackPanel Margin="10">
-                <TextBlock Text="Document Properties" FontSize="14" FontWeight="Bold" Foreground="#333333" Margin="0,0,0,10"/>
-                <TextBlock x:Name="TxtFilePath" Text="No file loaded" TextWrapping="Wrap" Foreground="#666666" FontSize="11"/>
-            </StackPanel>
-        </Border>
+        <!-- 📁 FIXED: Attach the LayoutTransform directly onto the main PagesControl container -->
+        <ItemsControl x:Name="PagesControl" 
+                        Margin="20"
+                        ItemsSource="{Binding ActivePages}"
+                        ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                        ScrollViewer.VerticalScrollBarVisibility="Auto"
+                        VirtualizingStackPanel.IsVirtualizing="True"
+                        VirtualizingStackPanel.VirtualizationMode="Recycling"
+                        VirtualizingStackPanel.CacheLengthUnit="Item"
+                        VirtualizingStackPanel.CacheLength="1,2">
 
-        <!-- Central Multi-Page View Container -->
-        <ScrollViewer x:Name="WorkspaceScrollViewer" 
-                      Grid.Column="1" 
-                      HorizontalScrollBarVisibility="Auto" 
-                      VerticalScrollBarVisibility="Auto" 
-                      Background="#E5E5E5" 
-                      ScrollChanged="WorkspaceScrollViewer_ScrollChanged"
-                      >
+            <!-- Moving it here makes 'WorkspaceScaleTransform' globally visible to C# -->
+            <ItemsControl.LayoutTransform>
+                <ScaleTransform ScaleX="{Binding ZoomFactor}" ScaleY="{Binding ZoomFactor}"/>
+            </ItemsControl.LayoutTransform>
 
-            <!-- 📁 FIXED: Attach the LayoutTransform directly onto the main PagesControl container -->
-            <ItemsControl x:Name="PagesControl" 
-                          Margin="20"
-                          ItemsSource="{Binding ActivePages}"
-                          ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                          ScrollViewer.VerticalScrollBarVisibility="Auto"
-                          VirtualizingStackPanel.IsVirtualizing="True"
-                          VirtualizingStackPanel.VirtualizationMode="Recycling"
-                          VirtualizingStackPanel.CacheLengthUnit="Item"
-                          VirtualizingStackPanel.CacheLength="1,2">
+            <ItemsControl.ItemsPanel>
+                <ItemsPanelTemplate>
+                    <VirtualizingStackPanel/>
+                </ItemsPanelTemplate>
+            </ItemsControl.ItemsPanel>
 
-                <!-- Moving it here makes 'WorkspaceScaleTransform' globally visible to C# -->
-                <ItemsControl.LayoutTransform>
-                    <ScaleTransform ScaleX="{Binding ZoomFactor}" ScaleY="{Binding ZoomFactor}"/>
-                </ItemsControl.LayoutTransform>
+            <ItemsControl.ItemTemplate>
+                <DataTemplate>
+                    <Border Width="{Binding Width}" 
+                    Height="{Binding Height}" 
+                    Margin="0,10,0,10" 
+                    Background="White" 
+                    CornerRadius="2"
+                    Loaded="PageElement_Loaded" 
+                    Unloaded="PageElement_Unloaded">
+                        <Grid>
+                            <!-- Main Render Canvas -->
+                            <Image Source="{Binding BackgroundImage}" Stretch="Uniform"/>
 
-                <ItemsControl.ItemsPanel>
-                    <ItemsPanelTemplate>
-                        <VirtualizingStackPanel/>
-                    </ItemsPanelTemplate>
-                </ItemsControl.ItemsPanel>
-
-                <ItemsControl.ItemTemplate>
-                    <DataTemplate>
-                        <Border Width="{Binding Width}" 
-                        Height="{Binding Height}" 
-                        Margin="0,10,0,10" 
-                        Background="White" 
-                        CornerRadius="2"
-                        Loaded="PageElement_Loaded" 
-                        Unloaded="PageElement_Unloaded">
-                            <Grid>
-                                <!-- Main Render Canvas -->
-                                <Image Source="{Binding BackgroundImage}" Stretch="Uniform"/>
-
-                                <!-- Placeholder Loading Indicator (Only shows when image is missing) -->
-                                <TextBlock Text="Loading Page Vector Maps..." 
-                                   HorizontalAlignment="Center" 
-                                   VerticalAlignment="Center" 
-                                   Foreground="DarkGray"
-                                   Visibility="{Binding IsRendered, Converter={StaticResource InverseBooleanToVisibilityConverter}}"/>
-                            </Grid>
-                        </Border>
-                    </DataTemplate>
-                </ItemsControl.ItemTemplate>
-            </ItemsControl>
-        </ScrollViewer>
-    </Grid>
+                            <!-- Placeholder Loading Indicator (Only shows when image is missing) -->
+                            <TextBlock Text="Loading Page Vector Maps..." 
+                                HorizontalAlignment="Center" 
+                                VerticalAlignment="Center" 
+                                Foreground="DarkGray"
+                                Visibility="{Binding IsRendered, Converter={StaticResource InverseBooleanToVisibilityConverter}}"/>
+                        </Grid>
+                    </Border>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+    </ScrollViewer>
     
 </UserControl>

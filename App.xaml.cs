@@ -58,6 +58,7 @@ namespace pdf_editor2
             services.AddSingleton<PdfService>();
 
             // --- VIEWMODELS (State Containers) ---
+            services.AddSingleton<DiagnosticsViewModel>();
             services.AddTransient<PdfWorkspaceViewModel>();
             services.AddTransient<MainViewModel>();
 
