@@ -1,0 +1,77 @@
+﻿<UserControl x:Class="pdf_editor2.Views.SideViews.ObjectInspectorView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:local="clr-namespace:pdf_editor2.Views.SideViews"
+             mc:Ignorable="d" 
+             d:DesignHeight="450" d:DesignWidth="300">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <!-- Row 0: Title Header -->
+            <RowDefinition Height="*"/>
+            <!-- Row 1: DataGrid List -->
+            <RowDefinition Height="Auto"/>
+            <!-- Row 2: Summary Panel -->
+        </Grid.RowDefinitions>
+
+        <!-- 1. SECTION HEADER LAYOUT -->
+        <Border Grid.Row="0" BorderBrush="#F0F0F0" BorderThickness="0,0,0,1" Padding="0,0,0,10" Margin="0,0,0,10">
+            <StackPanel>
+                <TextBlock Text="Object Inspector" FontSize="14" FontWeight="Bold" Foreground="#333333"/>
+                <TextBlock x:Name="TxtPageSubTitle" Text="Visual elements extracted from current page" FontSize="11" Foreground="#888888" Margin="0,2,0,0"/>
+            </StackPanel>
+        </Border>
+
+        <!-- 2. SCROLLABLE DATA GRID VIEW -->
+        <DataGrid x:Name="GridPageElements" 
+                  Grid.Row="1"
+                  AutoGenerateColumns="False" 
+                  CanUserAddRows="False"
+                  CanUserDeleteRows="True"
+                  GridLinesVisibility="Horizontal"
+                  HorizontalGridLinesBrush="#F0F0F0"
+                  Background="#FFFFFF"
+                  BorderThickness="1"
+                  BorderBrush="#D0D0D0"
+                  RowHeight="28"
+                  ColumnHeaderHeight="30"
+                  SelectionMode="Single"
+                  HeadersVisibility="Column">
+
+            <DataGrid.ColumnHeaderStyle>
+                <Style TargetType="DataGridColumnHeader">
+                    <Setter Property="Background" Value="#F5F5F5"/>
+                    <Setter Property="Foreground" Value="#555555"/>
+                    <Setter Property="FontWeight" Value="SemiBold"/>
+                    <Setter Property="Padding" Value="5,0"/>
+                    <Setter Property="BorderBrush" Value="#E0E0E0"/>
+                    <Setter Property="BorderThickness" Value="0,0,1,1"/>
+                </Style>
+            </DataGrid.ColumnHeaderStyle>
+
+            <DataGrid.Columns>
+                <!-- Column 1: Internal Object Identifier -->
+                <DataGridTextColumn Header="ID" Binding="{Binding ElementId}" Width="40" IsReadOnly="True"/>
+
+                <!-- Column 2: Structural Classification Type (Text, Path, Image) -->
+                <DataGridTextColumn Header="Type" Binding="{Binding ElementType}" Width="70" IsReadOnly="True"/>
+
+                <!-- Column 3: Text Content Details or Shape Descriptions -->
+                <DataGridTextColumn Header="Content / Details" Binding="{Binding Details}" Width="*" IsReadOnly="True"/>
+
+                <!-- Column 4: Element Coordinates Spatial Metrics (X, Y, W, H) -->
+                <DataGridTextColumn Header="Bounds" Binding="{Binding BoundingBox}" Width="110" IsReadOnly="True"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- 3. BOTTOM METRICS SUMMARY STATUS LAYER -->
+        <Border Grid.Row="2" Background="#F9F9F9" BorderBrush="#E0E0E0" BorderThickness="1" Margin="0,10,0,0" Padding="8">
+            <Grid>
+                <TextBlock Text="Total Page Elements:" FontSize="11" Foreground="#666666" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                <TextBlock x:Name="TxtTotalElementsCount" Text="0 Objects" FontSize="11" FontWeight="Bold" Foreground="#007ACC" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+            </Grid>
+        </Border>
+    </Grid>
+</UserControl>
