@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
+using System.Windows.Controls.Primitives;
 using System.Windows.Data;
 using System.Windows.Documents;
 using System.Windows.Input;
@@ -55,6 +56,26 @@ namespace pdf_editor2.Views.SideViews
             //{
             //    TxtTotalElementsCount.Text = $"{ElementsList.Count} Objects";
             //}
+        }
+
+        /// <summary>
+        /// Handles row-level icon click interactions to toggle the context preview overlay panel.
+        /// </summary>
+        private void BtnInspectText_Click(object sender, RoutedEventArgs e)
+        {
+            if (sender is Button btn)
+            {
+                // Traverse the logical structural tree framework to find the sibling Popup control element handle
+                if (btn.Parent is Grid parentGrid)
+                {
+                    var popup = parentGrid.FindName("TextDetailPopup") as Popup;
+                    if (popup != null)
+                    {
+                        // Toggle the popup visible state. StaysOpen=False ensures clicking outside automatically hides it.
+                        popup.IsOpen = !popup.IsOpen;
+                    }
+                }
+            }
         }
     }
 

@@ -134,4 +134,13 @@ public class PdfService
             }
         });
     }
+
+    /// <summary>
+    /// Proxy forwarder method passing global typography indexing directly down into the optimized render engine layer context.
+    /// </summary>
+    public List<PdfGlobalStyle> ScanDocumentGlobalStyles(string filePath)
+    {
+        // Routes the file path straight down into your preheated engine implementation core safely
+        return _renderEngine.ScanDocumentGlobalStyles(filePath);
+    }
 }

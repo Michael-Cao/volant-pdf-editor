@@ -18,6 +18,12 @@ namespace pdf_editor2.ViewModels
 
         public ObservableCollection<PdfPageViewModel> ActivePages { get; } = new();
         public ObservableCollection<PdfWordData> ExtractedObjects { get; } = new();
+
+        /// <summary>
+        /// Holds a comprehensive, de-duplicated list of all unique text styles used throughout the document.
+        /// </summary>
+        public ObservableCollection<PdfGlobalStyle> DocumentStylesPalette { get; } = new();
+
         private List<PdfWordData> _displayObjectsList = new List<PdfWordData>();
 
         private int _currentPageNumber = 1;
@@ -61,20 +67,55 @@ namespace pdf_editor2.ViewModels
         /// <summary>
         /// Instantly initializes empty skeletal framework wrappers to populate layout panels.
         /// </summary>
-        public void LoadNewDocument(string filePath)
+        public async void LoadNewDocument(string filePath)
         {
             _logger.LogInformation("Loading document {FilePath}", filePath);
+
+            // Safety check: instantly cache the current active file path state natively first
+            _currentFilePath = filePath;
             ActivePages.Clear();
+            DocumentStylesPalette.Clear();
 
             var skeletons = _pdfService.CreateDocumentSkeleton(filePath);
             TotalDocumentPages = skeletons.Count;
-            CurrentPageNumber = 1;
+
+            // Safely reset the page state trackers without firing accidental setup alerts early
+            _currentPageNumber = 1;
+            OnPropertyChanged(nameof(CurrentPageNumber));
 
             foreach (var page in skeletons)
             {
                 ActivePages.Add(page);
             }
             _logger.LogInformation("Loaded {Count} pages", ActivePages.Count);
+
+            // Initial sidebar inspector populate trigger
+            RefreshPageObjects();
+
+            // 🚀 ASYNC GLOBAL STYLE INDEXING: 
+            // Offload the heavy multi-page character loop to a background task runner thread.
+            // This allows the document pages to load instantly on the user screen without UI lag.
+            try
+            {
+                _logger.LogInformation("Spawning background thread worker to analyze global text typography maps...");
+
+                // Pass your ScanDocumentGlobalStyles proxy endpoint method down to the task thread runner
+                List<PdfGlobalStyle> masterStyles = await Task.Run(() => _pdfService.ScanDocumentGlobalStyles(filePath));
+
+                // Marshal back to the true Main UI thread to populate your dropdown palette safely
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    foreach (var style in masterStyles)
+                    {
+                        DocumentStylesPalette.Add(style);
+                    }
+                    _logger.LogInformation("Background indexing finished. Successfully loaded {Count} unique styles to UI palette.", DocumentStylesPalette.Count);
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed aggregating global unique text typography styles during document initialization.");
+            }
         }
 
         /// <summary>
@@ -120,7 +161,6 @@ namespace pdf_editor2.ViewModels
             {
                 _logger.LogInformation("[UI-Sync] Converting {Count} word tokens into target view primitives.", currentPageViewModel.WordsData.Count);
 
-                // 1. FIX: Instantly clear out old collection values before processing the loop iteration!
                 ExtractedObjects.Clear();
 
                 var elementsToPush = new List<pdf_editor2.Views.SideViews.PdfPageElement>();
@@ -128,35 +168,38 @@ namespace pdf_editor2.ViewModels
 
                 foreach (var word in currentPageViewModel.WordsData)
                 {
+                    // FIX: Convert the ObjectType enum into clean display names for your columns
+                    string displayType = word.ObjectType switch
+                    {
+                        PdfObjectType.Image => "Image",
+                        PdfObjectType.Path => "Path",
+                        _ => "Paragraph"
+                    };
+
                     elementsToPush.Add(new pdf_editor2.Views.SideViews.PdfPageElement
                     {
                         ElementId = currentId++,
-                        ElementType = "Text",
+                        ElementType = displayType, // Maps dynamically to "Text", "Image", or "Path" strings
                         Details = word.Text,
-                        BoundingBox = $"[{Math.Round(word.X, 1)}, {Math.Round(word.Y, 1)}]"
+                        BoundingBox = $"[{Math.Round(word.X, 1)}, {Math.Round(word.Y, 1)}, {Math.Round(word.Width, 1)}x{Math.Round(word.Height, 1)}]"
                     });
 
-                    // 2. Safe to add now that the collection wrapper instance is fresh and emptied
                     ExtractedObjects.Add(word);
                 }
 
-                // 3. Marshall execution to the primary UI window thread layer context
                 System.Windows.Application.Current.Dispatcher.Invoke(() =>
                 {
                     var mainWindow = System.Windows.Application.Current.MainWindow as pdf_editor2.Views.MainWindow;
                     if (mainWindow != null)
                     {
                         var inspectorView = FindVisualChild<pdf_editor2.Views.SideViews.ObjectInspectorView>(mainWindow);
-
                         if (inspectorView != null)
                         {
-                            // Directly push the converted elements array onto the control's code-behind pipeline
                             inspectorView.UpdatePageElements(elementsToPush);
                         }
                     }
                 });
 
-                // Broadcast property change pass to instantly update the bottom summary panel string template
                 OnPropertyChanged(nameof(ExtractedObjects));
             }
         }
