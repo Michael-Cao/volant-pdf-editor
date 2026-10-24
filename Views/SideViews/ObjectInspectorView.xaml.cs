@@ -77,6 +77,39 @@ namespace pdf_editor2.Views.SideViews
                 }
             }
         }
+
+        private void GridPageElements_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (GridPageElements.SelectedItem != null)
+            {
+                // 🛠️ CRITICAL FIX: Direct context projection bypasses any broken MVVM binding chains.
+                // This forces the properties grid template inside DetailPanel to read the highlighted row model instantly!
+                if (DetailPanel != null)
+                {
+                    DetailPanel.DataContext = GridPageElements.SelectedItem;
+                    DetailPanel.Visibility = System.Windows.Visibility.Visible;
+                }
+
+                if (PanelSplitter != null)
+                {
+                    PanelSplitter.Visibility = System.Windows.Visibility.Visible;
+                }
+            }
+            else
+            {
+                // Clear context structures safely when selection state is empty
+                if (DetailPanel != null)
+                {
+                    DetailPanel.DataContext = null;
+                    DetailPanel.Visibility = System.Windows.Visibility.Collapsed;
+                }
+
+                if (PanelSplitter != null)
+                {
+                    PanelSplitter.Visibility = System.Windows.Visibility.Collapsed;
+                }
+            }
+        }
     }
 
     /// <summary>

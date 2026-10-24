@@ -3,35 +3,33 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:behaviors="clr-namespace:pdf_editor2.Behaviors"
              xmlns:local="clr-namespace:pdf_editor2.Views"
              xmlns:models="clr-namespace:pdf_editor2.Models"
              xmlns:converters="clr-namespace:pdf_editor2.Converters"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="800">
 
+    <!-- Replaced PreviewKeyDown code-behind with clean XAML Input Bindings -->
+    <UserControl.InputBindings>
+        <KeyBinding Key="PageDown" Command="{Binding ScrollPageDownCommand}" />
+        <KeyBinding Key="PageUp" Command="{Binding ScrollPageUpCommand}" />
+    </UserControl.InputBindings>
+
     <UserControl.Resources>
-        <!-- Resource bindings for routing visibility states -->
         <BooleanToVisibilityConverter x:Key="BoolToVisibilityConverter" />
         <converters:InverseBooleanToVisibilityConverter x:Key="InverseBoolToVisibilityConverter" />
     </UserControl.Resources>
 
-    <!-- Central Multi-Page View Container -->
     <ScrollViewer x:Name="WorkspaceScrollViewer" 
-                  Grid.Column="1" 
-                  HorizontalScrollBarVisibility="Auto" 
-                  VerticalScrollBarVisibility="Auto" 
                   Background="#E5E5E5" 
-                  ScrollChanged="WorkspaceScrollViewer_ScrollChanged">
+                  ScrollChanged="WorkspaceScrollViewer_ScrollChanged"
+                  HorizontalScrollBarVisibility="Auto" 
+                  VerticalScrollBarVisibility="Auto">
 
-        <ItemsControl x:Name="PagesControl" 
-                      Margin="20"
-                      ItemsSource="{Binding ActivePages}"
-                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
-                      ScrollViewer.VerticalScrollBarVisibility="Auto"
+        <ItemsControl ItemsSource="{Binding ActivePages}" Margin="20"
                       VirtualizingStackPanel.IsVirtualizing="True"
-                      VirtualizingStackPanel.VirtualizationMode="Recycling"
-                      VirtualizingStackPanel.CacheLengthUnit="Item"
-                      VirtualizingStackPanel.CacheLength="1,2">
+                      VirtualizingStackPanel.VirtualizationMode="Recycling">
 
             <ItemsControl.LayoutTransform>
                 <ScaleTransform ScaleX="{Binding ZoomFactor}" ScaleY="{Binding ZoomFactor}"/>
@@ -45,48 +43,27 @@
 
             <ItemsControl.ItemTemplate>
                 <DataTemplate>
-                    <Border Width="{Binding Width}" 
-                            Height="{Binding Height}" 
-                            Margin="0,10,0,10" 
-                            Background="White" 
-                            CornerRadius="2"
-                            Loaded="PageElement_Loaded" 
-                            Unloaded="PageElement_Unloaded">
+                    <!-- 🛠️ Attached behavior now takes care of RAM management cleanly -->
+                    <Border Width="{Binding Width}" Height="{Binding Height}" Margin="0,10" Background="White" CornerRadius="2"
+                            behaviors:PdfPageLifecycleBehavior.ObserveLifecycle="True">
                         <Grid>
-                            <!-- MODE 1: Flat Image Display (Visible when IsStructuredRenderingMode is FALSE) -->
-                            <Image Source="{Binding BackgroundImage}" 
-                                   Stretch="Uniform"
+                            <!-- MODE 1 -->
+                            <Image Source="{Binding BackgroundImage}" Stretch="Uniform" 
                                    Visibility="{Binding DataContext.IsStructuredRenderingMode, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
 
-                            <!-- MODE 2: Structured Element Rendering (Visible when IsStructuredRenderingMode is TRUE) -->
-                            <!-- 🚀 HIGH PERFORMANCE SWAP: Replaced the slow, nested ItemsControl tree loop with the drawing visual host surface -->
+                            <!-- MODE 2 -->
                             <Grid Visibility="{Binding DataContext.IsStructuredRenderingMode, RelativeSource={RelativeSource AncestorType=UserControl}, Converter={StaticResource BoolToVisibilityConverter}}">
-
-                                <!-- 🚀 HARMONIZED ZOOM & STRETCH: Passing the unscaled PageWidth and PageHeight constraints into the custom surface -->
-                                <!-- forces the Viewbox to compare bounding boxes and uniformly magnify text elements into full paragraph blocks. -->
-                                <Viewbox Stretch="Uniform" HorizontalAlignment="Stretch" VerticalAlignment="Stretch">
-
-                                    <local:PdfTextSurface WordsSource="{Binding WordsData}"
-                                                          Width="{Binding Width}" 
-                                                          Height="{Binding Height}"
-                                                          HorizontalAlignment="Left"                                                          
-                                                          VerticalAlignment="Top"
-                                                          ClipToBounds="True">
-                                        <local:PdfTextSurface.LayoutTransform>
-                                            <TransformGroup>
-                                                <ScaleTransform ScaleX="3.8" ScaleY="3.8"/>
-                                            </TransformGroup>
-                                        </local:PdfTextSurface.LayoutTransform>
-                                    </local:PdfTextSurface>
-
-                                </Viewbox>
+                                <local:SkiaPdfTextSurface  
+                                    WordsSource="{Binding WordsData}" 
+                                    Width="{Binding Width}" 
+                                    Height="{Binding Height}" 
+                                    HorizontalAlignment="Left" 
+                                    VerticalAlignment="Top" 
+                                    ClipToBounds="True">
+                                </local:SkiaPdfTextSurface>
                             </Grid>
-                            
-                            <!-- Placeholder Loading Indicator (Only shows when page is missing) -->
-                            <TextBlock Text="Loading Page Vector Maps..." 
-                                       HorizontalAlignment="Center" 
-                                       VerticalAlignment="Center" 
-                                       Foreground="DarkGray"
+
+                            <TextBlock Text="Loading Page Vector Maps..." HorizontalAlignment="Center" VerticalAlignment="Center" Foreground="DarkGray" 
                                        Visibility="{Binding IsRendered, Converter={StaticResource InverseBoolToVisibilityConverter}}"/>
                         </Grid>
                     </Border>

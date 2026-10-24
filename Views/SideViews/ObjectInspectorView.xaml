@@ -3,17 +3,25 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
-             xmlns:local="clr-namespace:pdf_editor2.Views.SideViews"
+             xmlns:side="clr-namespace:pdf_editor2.Views.SideViews"
              mc:Ignorable="d" 
              d:DesignHeight="450" d:DesignWidth="300">
-    <Grid>
+
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <!-- 🛠️ Safe Relative Pack URI Pathing to avoid cross-assembly parsing conflicts -->
+                <ResourceDictionary Source="ObjectInspectorTemplates.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+
+    <Grid Margin="10">
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <!-- Row 0: Title Header -->
+            <!-- Row 0: Section Header -->
             <RowDefinition Height="*"/>
-            <!-- Row 1: DataGrid List -->
-            <RowDefinition Height="Auto"/>
-            <!-- Row 2: Summary Panel -->
+            <!-- Row 1: Split View Workplace Area -->
         </Grid.RowDefinitions>
 
         <!-- 1. SECTION HEADER LAYOUT -->
@@ -24,146 +32,78 @@
             </StackPanel>
         </Border>
 
-        <!-- 2. SCROLLABLE DATA GRID VIEW -->
-        <DataGrid x:Name="GridPageElements" 
-                  ItemsSource="{Binding ElementsList}"
-                  Grid.Row="1"
-                  AutoGenerateColumns="False" 
-                  CanUserAddRows="False"
-                  CanUserDeleteRows="False"
-                  GridLinesVisibility="Horizontal"
-                  HorizontalGridLinesBrush="#F0F0F0"
-                  Background="#FFFFFF"
-                  BorderThickness="1"
-                  BorderBrush="#D0D0D0"
-                  RowHeight="28"
-                  ColumnHeaderHeight="30"
-                  SelectionMode="Single"
-                  IsReadOnly="True"
-                  HeadersVisibility="Column">
+        <!-- 2. MAIN SPLIT SCREEN INTERFACE CONTAINER (STACKED VERTICALLY) -->
+        <Grid Grid.Row="1">
+            <Grid.RowDefinitions>
+                <!-- 🛠️ CRITICAL LAYOUT MODIFICATION: Swapped out ColumnDefinitions for vertical RowDefinitions -->
+                <RowDefinition Height="2*"/>
+                <!-- Top Pane: DataGrid List Grid -->
+                <RowDefinition Height="Auto"/>
+                <!-- Center: Horizontal Resizable Splitter Tracking line -->
+                <RowDefinition Height="Auto"/>
+                <!-- Bottom Pane: Detail View Sub-Panel Box (Controlled dynamically) -->
+            </Grid.RowDefinitions>
 
-            <DataGrid.ColumnHeaderStyle>
-                <Style TargetType="DataGridColumnHeader">
-                    <Setter Property="Background" Value="#F5F5F5"/>
-                    <Setter Property="Foreground" Value="#555555"/>
-                    <Setter Property="FontWeight" Value="SemiBold"/>
-                    <Setter Property="Padding" Value="5,0"/>
-                    <Setter Property="BorderBrush" Value="#E0E0E0"/>
-                    <Setter Property="BorderThickness" Value="0,0,1,1"/>
-                </Style>
-            </DataGrid.ColumnHeaderStyle>
+            <!-- A: SCROLLABLE DATA GRID VIEW -->
+            <DataGrid x:Name="GridPageElements" 
+                      Grid.Row="0"
+                      ItemsSource="{Binding ElementsList}"
+                      SelectedItem="{Binding SelectedElement, Mode=TwoWay}"
+                      SelectionChanged="GridPageElements_SelectionChanged"
+                      AutoGenerateColumns="False" 
+                      CanUserAddRows="False"
+                      CanUserDeleteRows="False"
+                      GridLinesVisibility="Horizontal"
+                      HorizontalGridLinesBrush="#F0F0F0"
+                      Background="#FFFFFF"
+                      BorderThickness="1"
+                      BorderBrush="#D0D0D0"
+                      RowHeight="28"
+                      ColumnHeaderHeight="30"
+                      SelectionMode="Single"
+                      IsReadOnly="True"
+                      HeadersVisibility="Column">
 
-            <DataGrid.Columns>
+                <DataGrid.ColumnHeaderStyle>
+                    <Style TargetType="DataGridColumnHeader">
+                        <Setter Property="Background" Value="#F5F5F5"/>
+                        <Setter Property="Foreground" Value="#555555"/>
+                        <Setter Property="FontWeight" Value="SemiBold"/>
+                        <Setter Property="Padding" Value="5,0"/>
+                        <Setter Property="BorderBrush" Value="#E0E0E0"/>
+                        <Setter Property="BorderThickness" Value="0,0,1,1"/>
+                    </Style>
+                </DataGrid.ColumnHeaderStyle>
 
-                <DataGridTextColumn Header="IC" Binding="{Binding ElementId}" Width="35" IsReadOnly="True"/>
+                <DataGrid.Columns>
+                    <DataGridTextColumn Header="IC" Binding="{Binding ElementId}" Width="35" IsReadOnly="True"/>
+                    <DataGridTextColumn Header="Type" Binding="{Binding ElementType}" Width="60" IsReadOnly="True"/>
+                    <DataGridTemplateColumn Header="Content" Width="*" MinWidth="80" 
+                                            CellTemplate="{StaticResource DataGridContentCellTemplate}"/>
+                </DataGrid.Columns>
+            </DataGrid>
 
-                <!-- Type Character Column -->
-                <DataGridTextColumn Header="Type" Binding="{Binding ElementType}" Width="80" IsReadOnly="True"/>
+            <!-- B: RESIZABLE GRID SPLITTER BAR (HORIZONTAL ORIENTATION) -->
+            <!-- 🛠️ ORIENTATION PATCH: Modified properties to slide vertically instead of horizontally -->
+            <GridSplitter x:Name="PanelSplitter"
+                          Grid.Row="1" 
+                          Height="4" 
+                          HorizontalAlignment="Stretch" 
+                          VerticalAlignment="Center" 
+                          Background="#EAEAEA"
+                          ShowsPreview="True"
+                          Visibility="Collapsed"/>
 
-                <!-- Content Column -->
-                <DataGridTemplateColumn Header="Content" Width="*" MinWidth="120">
-                    <DataGridTemplateColumn.CellTemplate>
-                        <DataTemplate>
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*"/>
-                                    <ColumnDefinition Width="Auto"/>
-                                </Grid.ColumnDefinitions>
-
-                                <!-- Truncated preview text block segment -->
-                                <TextBlock Grid.Column="0" 
-                                           Text="{Binding Details, Mode=OneWay}" 
-                                           TextTrimming="CharacterEllipsis" 
-                                           Foreground="#333333" 
-                                           Margin="5,0"
-                                           VerticalAlignment="Center"/>
-
-                                <!-- Inline inspector button -->
-                                <Button Grid.Column="1" 
-                                        x:Name="BtnInspectText"
-                                        Content="..." 
-                                        FontSize="10"
-                                        FontWeight="Bold"
-                                        Foreground="#666666"
-                                        Width="22" 
-                                        Height="18" 
-                                        Margin="4,0"
-                                        Padding="0,0,0,3"
-                                        Background="#F5F5F5" 
-                                        BorderBrush="#DCDCDC"
-                                        BorderThickness="1" 
-                                        Cursor="Hand"
-                                        ToolTip="Inspect Full Paragraph Text"
-                                        Click="BtnInspectText_Click">
-                                    <Button.Style>
-                                        <Style TargetType="Button">
-                                            <!-- Default visibility condition template -->
-                                            <Setter Property="Visibility" Value="Visible"/>
-                                            <!-- FIX: Dynamic UI Trigger pattern to hide button for Path types -->
-                                            <Style.Triggers>
-                                                <DataTrigger Binding="{Binding ElementType}" Value="Path">
-                                                    <Setter Property="Visibility" Value="Collapsed"/>
-                                                </DataTrigger>
-                                            </Style.Triggers>
-                                        </Style>
-                                    </Button.Style>
-                                    <Button.Resources>
-                                        <Style TargetType="Border">
-                                            <Setter Property="CornerRadius" Value="3"/>
-                                        </Style>
-                                    </Button.Resources>
-                                </Button>
-
-                                <!-- Widened popup insight panel overlay -->
-                                <Popup x:Name="TextDetailPopup" 
-                                       PlacementTarget="{Binding ElementName=BtnInspectText}" 
-                                       Placement="Left" 
-                                       StaysOpen="False"
-                                       AllowsTransparency="True"
-                                       PopupAnimation="Fade">
-                                    <Border Background="#FFFFFF" 
-                                            BorderBrush="#007ACC" 
-                                            BorderThickness="1.5" 
-                                            CornerRadius="5" 
-                                            Padding="14" 
-                                            Width="500" 
-                                            MaxHeight="380"
-                                            Margin="8">
-                                        <Border.Effect>
-                                            <DropShadowEffect BlurRadius="12" Color="#AAAAAA" ShadowDepth="4" Opacity="0.4"/>
-                                        </Border.Effect>
-                                        <Grid>
-                                            <Grid.RowDefinitions>
-                                                <RowDefinition Height="Auto"/>
-                                                <RowDefinition Height="*"/>
-                                            </Grid.RowDefinitions>
-
-                                            <TextBlock Grid.Row="0" Text="Full Paragraph Content" FontSize="12" FontWeight="Bold" Foreground="#007ACC" Margin="0,0,0,8"/>
-
-                                            <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                                                <TextBlock Text="{Binding Details, Mode=OneWay}" 
-                                                           TextWrapping="Wrap" 
-                                                           FontSize="12" 
-                                                           LineHeight="18"
-                                                           Foreground="#222222"/>
-                                            </ScrollViewer>
-                                        </Grid>
-                                    </Border>
-                                </Popup>
-                            </Grid>
-                        </DataTemplate>
-                    </DataGridTemplateColumn.CellTemplate>
-                </DataGridTemplateColumn>
-            </DataGrid.Columns>
-        </DataGrid>
-
-        <!-- 3. BOTTOM METRICS SUMMARY STATUS LAYER -->
-        <Border Grid.Row="2" Background="#F9F9F9" BorderBrush="#E0E0E0" BorderThickness="1" Margin="0,10,0,0" Padding="8">
-            <Grid>
-                <TextBlock Text="Total Page Elements:" FontSize="11" Foreground="#666666" HorizontalAlignment="Left" VerticalAlignment="Center"/>
-                <TextBlock Text="{Binding ExtractedObjects.Count, Mode=OneWay, StringFormat='{}{0} Objects'}" 
-                           FontSize="11" FontWeight="Bold" Foreground="#007ACC" HorizontalAlignment="Right" VerticalAlignment="Center"/>
-            </Grid>
-        </Border>
+            <!-- C: MODULARIZED DETAIL PANEL SUB-VIEW INTERFACE -->
+            <!-- 🛠️ RESPONSIVE FIT PATCH: Removed hardcoded Width="260" and swapped it for adaptive Height constraints -->
+            <side:ObjectElementDetailView x:Name="DetailPanel"
+                              Grid.Row="2" 
+                              DataContext="{Binding SelectedElement}" 
+                              MinHeight="140"
+                              Width="Auto" 
+                              Margin="0,8,0,0"
+                              Visibility="Collapsed"/>
+        </Grid>
     </Grid>
+
 </UserControl>

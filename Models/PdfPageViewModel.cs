@@ -1,8 +1,9 @@
-﻿using System.ComponentModel;
+﻿using pdf_editor2.Services;
+using SkiaSharp;
+using System.Collections.Generic;
+using System.ComponentModel;
 using System.Runtime.CompilerServices;
 using System.Windows.Media.Imaging;
-using System.Collections.Generic;
-using pdf_editor2.Services;
 
 namespace pdf_editor2.Models
 {
@@ -45,6 +46,7 @@ namespace pdf_editor2.Models
             get => _imagesData;
             set { _imagesData = value; OnPropertyChanged(); }
         }
+        public SKPicture CompiledTextPicture { get; set; }
 
         public PdfStructureInfo Structure { get; set; }
         public PdfPageStructure PageStructure { get; set; }

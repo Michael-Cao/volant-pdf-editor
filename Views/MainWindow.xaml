@@ -51,7 +51,7 @@
         <!-- Splitting Row 2 layout into: [Sidebar Panel | Grid Splitter | Main Workspace] -->
         <Grid Grid.Row="2">
             <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="250" MinWidth="50" MaxWidth="500"/>
+                <ColumnDefinition Width="400" MinWidth="50" MaxWidth="600"/>
                 <!-- Column 0: Permanent Vertical Icon Toolbar -->
                 <ColumnDefinition Width="Auto"/>
                 <!-- Column 2: Draggable GridSplitter -->
