@@ -51,10 +51,10 @@ namespace pdf_editor2.Views.SideViews
         /// </summary>
         private void UpdateTotalElementsCount()
         {
-            if (TxtTotalElementsCount != null)
-            {
-                TxtTotalElementsCount.Text = $"{ElementsList.Count} Objects";
-            }
+            //if (TxtTotalElementsCount != null)
+            //{
+            //    TxtTotalElementsCount.Text = $"{ElementsList.Count} Objects";
+            //}
         }
     }
 

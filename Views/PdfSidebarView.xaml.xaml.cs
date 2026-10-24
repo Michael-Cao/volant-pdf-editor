@@ -1,4 +1,6 @@
-﻿using pdf_editor2.Views.SideViews;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using pdf_editor2.Views.SideViews;
 using System;
 using System.Collections.Generic;
 using System.Text;
@@ -20,9 +22,15 @@ namespace pdf_editor2.Views
     /// </summary>
     public partial class PdfSidebarView : UserControl
     {
+        private readonly ILogger<PdfSidebarView> _logger;
+
         public PdfSidebarView()
         {
             InitializeComponent();
+
+            _logger = App.ServiceProvider.GetRequiredService<ILogger<PdfSidebarView>>();
+
+            _logger.LogInformation("PdfSidebarView initialized via Service Locator.");
         }
 
         /// <summary>

@@ -28,11 +28,16 @@ namespace pdf_editor2.Views
 
         public MainWindow(MainViewModel viewModel, PdfWorkspaceView pdfWorkspace) : this()
         {
+            // Sets the parent window data context to MainViewModel
             DataContext = viewModel;
 
             _pdfWorkspace = pdfWorkspace;
 
+            // Direct assignment to the core center page view workspace model
             _pdfWorkspace.DataContext = viewModel.Workspace;
+
+            // FIX: Route the exact same Workspace view model state to the sidebar
+            PdfSidebar.DataContext = viewModel.Workspace;
 
             WorkspaceHost.Content = _pdfWorkspace;
         }

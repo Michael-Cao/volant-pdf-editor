@@ -60,7 +60,7 @@
             </Grid.ColumnDefinitions>
 
             <!-- COLUMN 0: PERMANENT LEFT VERTICAL TOOLBAR (Always Visible) -->
-            <views:PdfSidebarView x:Name="PdfSidebar" Grid.Column="0" />
+            <views:PdfSidebarView x:Name="PdfSidebar" Grid.Column="0"/>
 
             <!-- COLUMN 2: DRAGGABLE SPLITTER -->
             <GridSplitter x:Name="WorkspaceSplitter" Grid.Column="1" Width="4" HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Background="#E0E0E0"/>

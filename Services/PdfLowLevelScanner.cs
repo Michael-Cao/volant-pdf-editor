@@ -1,21 +1,18 @@
 ﻿using pdf_editor2.Models;
 using System;
-using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace pdf_editor2.Services
 {
-    public static class PdfStructureParser
+    internal static class PdfLowLevelScanner
     {
-        /// <summary>
-        /// Reads raw structural primitives from the PDF file byte boundaries (Header, XRef Table offset, and Trailer).
-        /// </summary>
-        public static PdfStructureInfo ParseLowLevelStructure(string filePath)
+        public static PdfStructureInfo ScanFileBoundaries(string filePath)
         {
             var info = new PdfStructureInfo
             {
-                Header = "%PDF-1.7", // Safe structural baseline fallback
+                Header = "%PDF-1.7",
                 XRefType = "Standard XRef Table",
                 XRefOffset = 0,
                 TrailerSize = 0
@@ -39,13 +36,12 @@ namespace pdf_editor2.Services
 
                     // Extract XRef and Trailer from the tail boundaries of the file allocation table
                     long length = stream.Length;
-                    long seekOffset = Math.Max(0, length - 1024); // Look at last 1KB
+                    long seekOffset = Math.Max(0, length - 1024);
                     stream.Seek(seekOffset, SeekOrigin.Begin);
 
                     byte[] tailBytes = reader.ReadBytes((int)(length - seekOffset));
                     string tailText = Encoding.ASCII.GetString(tailBytes);
 
-                    // Track down the last structural offset mapping (startXREF)
                     int startXrefIdx = tailText.LastIndexOf("startXREF", StringComparison.OrdinalIgnoreCase);
                     if (startXrefIdx == -1) startXrefIdx = tailText.LastIndexOf("startxref", StringComparison.OrdinalIgnoreCase);
 
@@ -59,13 +55,11 @@ namespace pdf_editor2.Services
                         }
                     }
 
-                    // Identify if modern compressed cross-reference streams are used instead of tables
                     if (tailText.Contains("/XRef") || tailText.Contains("ObjStm"))
                     {
                         info.XRefType = "Compressed Cross-Reference Stream (ObjStm)";
                     }
 
-                    // Extract Trailer sizing parameter footprints if visible in plain-text tail layout
                     int trailerIdx = tailText.LastIndexOf("trailer", StringComparison.OrdinalIgnoreCase);
                     if (trailerIdx != -1)
                     {

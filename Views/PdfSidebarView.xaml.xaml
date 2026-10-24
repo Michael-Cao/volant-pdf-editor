@@ -63,7 +63,7 @@
                         </Style>
                     </Grid.Style>
 
-                    <sidviews:ObjectInspectorView x:Name="ObjectInspectorPanel" />
+                    <sidviews:ObjectInspectorView x:Name="ObjectInspectorPanel"/>
                 </Grid>
 
                 <!-- 2. BOOKMARKS AREA -->

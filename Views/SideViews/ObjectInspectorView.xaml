@@ -9,11 +9,11 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
-            <!-- Row 0: Title Header -->
+            <!-- Row 0: Section Title Header -->
             <RowDefinition Height="*"/>
-            <!-- Row 1: DataGrid List -->
+            <!-- Row 1: Scrollable Elements List Grid -->
             <RowDefinition Height="Auto"/>
-            <!-- Row 2: Summary Panel -->
+            <!-- Row 2: Bottom Status Metrics Panel -->
         </Grid.RowDefinitions>
 
         <!-- 1. SECTION HEADER LAYOUT -->
@@ -25,20 +25,23 @@
         </Border>
 
         <!-- 2. SCROLLABLE DATA GRID VIEW -->
+        <!-- Changed ItemsSource path target directly to DisplayObjectsList -->
         <DataGrid x:Name="GridPageElements" 
-                  Grid.Row="1"
-                  AutoGenerateColumns="False" 
-                  CanUserAddRows="False"
-                  CanUserDeleteRows="True"
-                  GridLinesVisibility="Horizontal"
-                  HorizontalGridLinesBrush="#F0F0F0"
-                  Background="#FFFFFF"
-                  BorderThickness="1"
-                  BorderBrush="#D0D0D0"
-                  RowHeight="28"
-                  ColumnHeaderHeight="30"
-                  SelectionMode="Single"
-                  HeadersVisibility="Column">
+          ItemsSource="{Binding DisplayObjectsList}"
+          Grid.Row="1"
+          AutoGenerateColumns="False" 
+          CanUserAddRows="False"
+          CanUserDeleteRows="False"
+          GridLinesVisibility="Horizontal"
+          HorizontalGridLinesBrush="#F0F0F0"
+          Background="#FFFFFF"
+          BorderThickness="1"
+          BorderBrush="#D0D0D0"
+          RowHeight="28"
+          ColumnHeaderHeight="30"
+          SelectionMode="Single"
+          IsReadOnly="True"
+          HeadersVisibility="Column">
 
             <DataGrid.ColumnHeaderStyle>
                 <Style TargetType="DataGridColumnHeader">
@@ -50,27 +53,30 @@
                     <Setter Property="BorderThickness" Value="0,0,1,1"/>
                 </Style>
             </DataGrid.ColumnHeaderStyle>
-
             <DataGrid.Columns>
-                <!-- Column 1: Internal Object Identifier -->
-                <DataGridTextColumn Header="ID" Binding="{Binding ElementId}" Width="40" IsReadOnly="True"/>
 
-                <!-- Column 2: Structural Classification Type (Text, Path, Image) -->
-                <DataGridTextColumn Header="Type" Binding="{Binding ElementType}" Width="70" IsReadOnly="True"/>
+                <DataGridTextColumn Header="IC" Binding="{Binding ElementId}" Width="35" IsReadOnly="True"/>
 
-                <!-- Column 3: Text Content Details or Shape Descriptions -->
-                <DataGridTextColumn Header="Content / Details" Binding="{Binding Details}" Width="*" IsReadOnly="True"/>
+                <!-- Element type classification column (e.g. Text, Path, Image) -->
+                <DataGridTextColumn Header="Type" Binding="{Binding ElementType}" Width="90" IsReadOnly="True"/>
 
-                <!-- Column 4: Element Coordinates Spatial Metrics (X, Y, W, H) -->
-                <DataGridTextColumn Header="Bounds" Binding="{Binding BoundingBox}" Width="110" IsReadOnly="True"/>
+                <!-- Content Details column: Maps directly to the 'Details' string property -->
+                <DataGridTextColumn Header="Content" Binding="{Binding Details}" Width="*" MinWidth="100" IsReadOnly="True"/>
+
+                <!-- Bounds layout coordinate column: Maps directly to 'BoundingBox' -->
+                <DataGridTextColumn Header="Bounds" Binding="{Binding BoundingBox}" Width="120" IsReadOnly="True"/>
             </DataGrid.Columns>
         </DataGrid>
 
         <!-- 3. BOTTOM METRICS SUMMARY STATUS LAYER -->
         <Border Grid.Row="2" Background="#F9F9F9" BorderBrush="#E0E0E0" BorderThickness="1" Margin="0,10,0,0" Padding="8">
             <Grid>
+                <!-- Left structural description metadata string anchor -->
                 <TextBlock Text="Total Page Elements:" FontSize="11" Foreground="#666666" HorizontalAlignment="Left" VerticalAlignment="Center"/>
-                <TextBlock x:Name="TxtTotalElementsCount" Text="0 Objects" FontSize="11" FontWeight="Bold" Foreground="#007ACC" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+
+                <!-- Right reactive total item stream calculation display indicator -->
+                <TextBlock Text="{Binding ExtractedObjects.Count, Mode=OneWay, StringFormat='{}{0} Objects'}" 
+                           FontSize="11" FontWeight="Bold" Foreground="#007ACC" HorizontalAlignment="Right" VerticalAlignment="Center"/>
             </Grid>
         </Border>
     </Grid>

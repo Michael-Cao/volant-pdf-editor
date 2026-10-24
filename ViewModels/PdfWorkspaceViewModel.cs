@@ -5,6 +5,8 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Text;
+using System.Windows;
+using System.Windows.Media;
 
 namespace pdf_editor2.ViewModels
 {
@@ -12,8 +14,11 @@ namespace pdf_editor2.ViewModels
     {
         private readonly ILogger<PdfWorkspaceViewModel> _logger;
         private readonly PdfService _pdfService;
+        private string _currentFilePath = string.Empty;
 
         public ObservableCollection<PdfPageViewModel> ActivePages { get; } = new();
+        public ObservableCollection<PdfWordData> ExtractedObjects { get; } = new();
+        private List<PdfWordData> _displayObjectsList = new List<PdfWordData>();
 
         private int _currentPageNumber = 1;
         public int CurrentPageNumber
@@ -24,7 +29,10 @@ namespace pdf_editor2.ViewModels
                 if (value >= 1 && value <= TotalDocumentPages)
                 {
                     SetProperty(ref _currentPageNumber, value);
-                    // Pro Tip: Broadcast this change out to your PdfStatusBarView here!
+
+                    // Parse structural stream data when changing pages
+                    _logger.LogInformation("Page changed. Refreshing side panel objects for page {PageNum}", _currentPageNumber);
+                    RefreshPageObjects();
                 }
             }
         }
@@ -70,6 +78,109 @@ namespace pdf_editor2.ViewModels
         }
 
         /// <summary>
+        /// Expose a flat list property that forces the DataGrid to hard-refresh its internal row visual containers.
+        /// </summary>
+        public List<PdfWordData> DisplayObjectsList
+        {
+            get => _displayObjectsList;
+            private set
+            {
+                _displayObjectsList = value;
+                OnPropertyChanged(nameof(DisplayObjectsList));
+
+                // Keep your old collection populated so your bottom counter binding template does not break
+                ExtractedObjects.Clear();
+                if (_displayObjectsList != null)
+                {
+                    foreach (var item in _displayObjectsList)
+                    {
+                        ExtractedObjects.Add(item);
+                    }
+                }
+                OnPropertyChanged(nameof(ExtractedObjects));
+            }
+        }
+
+
+        /// <summary>
+        /// Invokes low-level page token scanning routines and safely updates the bound UI data collection.
+        /// </summary>
+        private void RefreshPageObjects()
+        {
+            int pageIndex = _currentPageNumber - 1;
+            if (pageIndex < 0 || pageIndex >= ActivePages.Count)
+            {
+                ExtractedObjects.Clear();
+                return;
+            }
+
+            var currentPageViewModel = ActivePages[pageIndex];
+
+            if (currentPageViewModel.IsRendered && currentPageViewModel.WordsData != null)
+            {
+                _logger.LogInformation("[UI-Sync] Converting {Count} word tokens into target view primitives.", currentPageViewModel.WordsData.Count);
+
+                // 1. FIX: Instantly clear out old collection values before processing the loop iteration!
+                ExtractedObjects.Clear();
+
+                var elementsToPush = new List<pdf_editor2.Views.SideViews.PdfPageElement>();
+                int currentId = 1;
+
+                foreach (var word in currentPageViewModel.WordsData)
+                {
+                    elementsToPush.Add(new pdf_editor2.Views.SideViews.PdfPageElement
+                    {
+                        ElementId = currentId++,
+                        ElementType = "Text",
+                        Details = word.Text,
+                        BoundingBox = $"[{Math.Round(word.X, 1)}, {Math.Round(word.Y, 1)}]"
+                    });
+
+                    // 2. Safe to add now that the collection wrapper instance is fresh and emptied
+                    ExtractedObjects.Add(word);
+                }
+
+                // 3. Marshall execution to the primary UI window thread layer context
+                System.Windows.Application.Current.Dispatcher.Invoke(() =>
+                {
+                    var mainWindow = System.Windows.Application.Current.MainWindow as pdf_editor2.Views.MainWindow;
+                    if (mainWindow != null)
+                    {
+                        var inspectorView = FindVisualChild<pdf_editor2.Views.SideViews.ObjectInspectorView>(mainWindow);
+
+                        if (inspectorView != null)
+                        {
+                            // Directly push the converted elements array onto the control's code-behind pipeline
+                            inspectorView.UpdatePageElements(elementsToPush);
+                        }
+                    }
+                });
+
+                // Broadcast property change pass to instantly update the bottom summary panel string template
+                OnPropertyChanged(nameof(ExtractedObjects));
+            }
+        }
+
+        /// <summary>
+        /// Helper utility method to locate deeply nested user controls down the WPF layout tree.
+        /// </summary>
+        private T FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
+        {
+            if (parent == null) return null;
+
+            // Scan down through all active immediate visual layers sequentially
+            for (int i = 0; i < VisualTreeHelper.GetChildrenCount(parent); i++)
+            {
+                var child = VisualTreeHelper.GetChild(parent, i);
+                if (child is T target) return target;
+
+                var childOfChild = FindVisualChild<T>(child);
+                if (childOfChild != null) return childOfChild;
+            }
+            return null;
+        }
+
+        /// <summary>
         /// Evaluates viewport boundaries to dynamically load/unload heavy page textures.
         /// </summary>
         public async Task ProcessViewportLoadingAsync(double scrollTop, double viewportHeight, double currentZoomFactor)
@@ -93,6 +204,11 @@ namespace pdf_editor2.ViewModels
                     if (!page.IsRendered)
                     {
                         await _pdfService.MaterializePageUiAsync(page);
+
+                        if (page.PageNumber == CurrentPageNumber)
+                        {
+                            RefreshPageObjects();
+                        }
                     }
                 }
                 else
