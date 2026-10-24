@@ -29,5 +29,21 @@ namespace pdf_editor2.Models
         /// Gets or sets the classification layout variant of the parsed primitive asset.
         /// </summary>
         public PdfObjectType ObjectType { get; set; } = PdfObjectType.Text;
+
+        /// <summary>
+        /// Gets or sets the native WPF image source used to render real visual data when ObjectType is Image.
+        /// </summary>
+        public byte[]? ImageDataPayload { get; set; }
+
+        /// <summary>
+        /// Gets or sets the hexadecimal color string for text rendering (e.g., "#007ACC").
+        /// </summary>
+        public string ForegroundColor { get; set; } = "#000000";
+
+        /// <summary>
+        /// Gets or sets the shared typographic styling asset container reference.
+        /// Points to a single allocated instance memory heap shared across all matching words.
+        /// </summary>
+        public PdfFontMetrics? StyleMetrics { get; set; }
     }
 }

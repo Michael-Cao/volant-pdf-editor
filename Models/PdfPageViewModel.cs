@@ -10,14 +10,42 @@ namespace pdf_editor2.Models
     {
         private BitmapImage _backgroundImage;
         private bool _isRendered;
+        private List<PdfWordData> _wordsData = new List<PdfWordData>();
+        private List<PdfWordData> _pathsData = new List<PdfWordData>();
+        private List<PdfWordData> _imagesData = new List<PdfWordData>();
 
         public int PageNumber { get; set; }
         public double Width { get; set; }
         public double Height { get; set; }
         public string FilePath { get; set; }
 
-        // Store lightweight layout data instead of heavy UI control trees
-        public List<PdfWordData> WordsData { get; set; } = new List<PdfWordData>();
+        /// <summary>
+        /// Gets or sets the collection of structural text words or paragraph blocks extracted on this page.
+        /// </summary>
+        public List<PdfWordData> WordsData
+        {
+            get => _wordsData;
+            set { _wordsData = value; OnPropertyChanged(); }
+        }
+
+        /// <summary>
+        /// Gets or sets the collection of raw vector graphics paths and geometric lines on this page.
+        /// </summary>
+        public List<PdfWordData> PathsData
+        {
+            get => _pathsData;
+            set { _pathsData = value; OnPropertyChanged(); }
+        }
+
+        /// <summary>
+        /// Gets or sets the collection of embedded bitmap images extracted inline from the page structure.
+        /// </summary>
+        public List<PdfWordData> ImagesData
+        {
+            get => _imagesData;
+            set { _imagesData = value; OnPropertyChanged(); }
+        }
+
         public PdfStructureInfo Structure { get; set; }
         public PdfPageStructure PageStructure { get; set; }
 

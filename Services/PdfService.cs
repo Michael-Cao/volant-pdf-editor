@@ -17,7 +17,7 @@ public class PdfService
     // Inject your engine cleanly via dependency injection
     public PdfService(PdfRenderEngine renderEngine, ILogger<PdfService> logger)
     {
-        _renderEngine = renderEngine;
+        _renderEngine = renderEngine ?? throw new ArgumentNullException(nameof(renderEngine));
         _logger = logger;
     }
 
@@ -32,15 +32,17 @@ public class PdfService
 
     public List<PdfPageViewModel> CreateDocumentSkeleton(string filePath)
     {
-        _logger.LogInformation("Create document skeleton...");
+        _logger.LogInformation("Create document skeleton for file: {FilePath}", filePath);
         var metaDataList = _renderEngine.GetDocumentSkeleton(filePath);
 
-        // Map DTO data structures cleanly directly into UI ViewModels
+        const double pointToPixel = 96.0 / 72.0;
+
+        // Map DTO data structures into UI ViewModels scaled up to standard pixel bounds
         return metaDataList.Select(meta => new PdfPageViewModel
         {
             PageNumber = meta.PageNumber,
-            Width = meta.Width,
-            Height = meta.Height,
+            Width = meta.Width * pointToPixel,   // 531 * 1.3333 = 708 pixels wide
+            Height = meta.Height * pointToPixel, // 666 * 1.3333 = 888 pixels high
             FilePath = meta.FilePath,
             IsRendered = false
         }).ToList();

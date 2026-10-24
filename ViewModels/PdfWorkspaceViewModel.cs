@@ -58,6 +58,28 @@ namespace pdf_editor2.ViewModels
             set => SetProperty(ref _zoomFactor, value);
         }
 
+        private bool _isStructuredRenderingMode;
+
+        /// <summary>
+        /// Gets or sets a value indicating whether the page should render using 
+        /// structured layout elements (text, paths, images) instead of a flat bitmap image.
+        /// </summary>
+        public bool IsStructuredRenderingMode
+        {
+            get => _isStructuredRenderingMode;
+            set
+            {
+                if (_isStructuredRenderingMode != value)
+                {
+                    _isStructuredRenderingMode = value;
+                    OnPropertyChanged(nameof(IsStructuredRenderingMode));
+
+                    // Trigger a refresh of the page display mode if necessary
+                    RefreshPageObjects();
+                }
+            }
+        }
+
         public PdfWorkspaceViewModel(PdfService pdfService, ILogger<PdfWorkspaceViewModel> logger)
         {
             _pdfService = pdfService;
@@ -92,30 +114,30 @@ namespace pdf_editor2.ViewModels
             // Initial sidebar inspector populate trigger
             RefreshPageObjects();
 
-            // 🚀 ASYNC GLOBAL STYLE INDEXING: 
-            // Offload the heavy multi-page character loop to a background task runner thread.
-            // This allows the document pages to load instantly on the user screen without UI lag.
-            try
-            {
-                _logger.LogInformation("Spawning background thread worker to analyze global text typography maps...");
+            //// 🚀 ASYNC GLOBAL STYLE INDEXING: 
+            //// Offload the heavy multi-page character loop to a background task runner thread.
+            //// This allows the document pages to load instantly on the user screen without UI lag.
+            //try
+            //{
+            //    _logger.LogInformation("Spawning background thread worker to analyze global text typography maps...");
 
-                // Pass your ScanDocumentGlobalStyles proxy endpoint method down to the task thread runner
-                List<PdfGlobalStyle> masterStyles = await Task.Run(() => _pdfService.ScanDocumentGlobalStyles(filePath));
+            //    // Pass your ScanDocumentGlobalStyles proxy endpoint method down to the task thread runner
+            //    List<PdfGlobalStyle> masterStyles = await Task.Run(() => _pdfService.ScanDocumentGlobalStyles(filePath));
 
-                // Marshal back to the true Main UI thread to populate your dropdown palette safely
-                System.Windows.Application.Current.Dispatcher.Invoke(() =>
-                {
-                    foreach (var style in masterStyles)
-                    {
-                        DocumentStylesPalette.Add(style);
-                    }
-                    _logger.LogInformation("Background indexing finished. Successfully loaded {Count} unique styles to UI palette.", DocumentStylesPalette.Count);
-                });
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Failed aggregating global unique text typography styles during document initialization.");
-            }
+            //    // Marshal back to the true Main UI thread to populate your dropdown palette safely
+            //    System.Windows.Application.Current.Dispatcher.Invoke(() =>
+            //    {
+            //        foreach (var style in masterStyles)
+            //        {
+            //            DocumentStylesPalette.Add(style);
+            //        }
+            //        _logger.LogInformation("Background indexing finished. Successfully loaded {Count} unique styles to UI palette.", DocumentStylesPalette.Count);
+            //    });
+            //}
+            //catch (Exception ex)
+            //{
+            //    _logger.LogError(ex, "Failed aggregating global unique text typography styles during document initialization.");
+            //}
         }
 
         /// <summary>

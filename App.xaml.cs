@@ -51,6 +51,11 @@ namespace pdf_editor2
 
             services.AddSingleton<PdfPageCache>();
 
+            services.AddSingleton<PdfFontMetricsManager>();
+
+            // Registered as a stateless Singleton because it transforms raw document models on demand
+            services.AddSingleton<PdfLayoutEngine>();
+
             // Register the Core Processing Engine
             services.AddSingleton<PdfRenderEngine>();
 

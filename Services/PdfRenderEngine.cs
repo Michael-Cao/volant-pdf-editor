@@ -33,16 +33,18 @@ namespace pdf_editor2.Services
 
         private readonly PdfPageResolver _pageResolver;
         private readonly PdfPageCache _pageCache;
+        private readonly PdfLayoutEngine _layoutEngine;
         private readonly ILogger<PdfRenderEngine> _logger;
 
         // ⚡ ACTIVE PERSISTENT HANDLE LAYER: Eliminates costly re-opens on disk
         private PdfDocument _activeDocument;
         private string _activeFilePath;
 
-        public PdfRenderEngine(PdfPageResolver pageResolver, PdfPageCache pageCache, ILogger<PdfRenderEngine> logger)
+        public PdfRenderEngine(PdfPageResolver pageResolver, PdfPageCache pageCache, PdfLayoutEngine layoutEngine, ILogger<PdfRenderEngine> logger)
         {
-            _pageResolver = pageResolver;
-            _pageCache = pageCache;
+            _pageResolver = pageResolver ?? throw new ArgumentNullException(nameof(pageResolver));
+            _pageCache = pageCache ?? throw new ArgumentNullException(nameof(pageCache));
+            _layoutEngine = layoutEngine ?? throw new ArgumentNullException(nameof(layoutEngine));
             _logger = logger;
         }
 
@@ -115,7 +117,7 @@ namespace pdf_editor2.Services
                     pageHeight = page.Height;
 
                     // Extract all text, image, and path entities via a clean helper extraction method
-                    combinedPrimitives = ExtractPagePrimitives(page);
+                    combinedPrimitives = _layoutEngine.ExtractPagePrimitives(page);
 
                     // Rasterize page canvas layouts to a portable PNG byte array
                     bitmapBytes = RasterizePageToPng(pageNumber);
@@ -170,119 +172,7 @@ namespace pdf_editor2.Services
         {
             await RenderAndParsePageAsync(filePath, pageNumber);
         }
-
-        /// <summary>
-        /// Scans text tokens, raster images, and vector path lines from the active PdfPig page container.
-        /// </summary>
-        private List<PdfWordData> ExtractPagePrimitives(Page page)
-        {
-            var primitives = new List<PdfWordData>();
-            if (page == null) return primitives;
-
-            _logger.LogInformation("[Engine-Layout] Starting specialized document layout analysis for page {Num}.", page.Number);
-
-            // 1. Cluster Words into Multi-Line Paragraph Blocks sorted by logical reading order
-            try
-            {
-                var letters = page.Letters;
-                if (letters != null && letters.Any())
-                {
-                    // Step A: Extract words out of raw character letters using the nearest neighbor algorithm tool
-                    var words = NearestNeighbourWordExtractor.Instance.GetWords(letters);
-
-                    // Step B: Segment the collection of words dynamically into multi-line block paragraph structures
-                    var textBlocks = DocstrumBoundingBoxes.Instance.GetBlocks(words);
-
-                    // Step C: Sequence blocks into human-readable logical processing streams
-                    var orderedTextBlocks = UnsupervisedReadingOrderDetector.Instance.Get(textBlocks);
-
-                    foreach (var block in orderedTextBlocks)
-                    {
-                        // Reconstruct multi-line paragraph block text cleanly
-                        var sb = new StringBuilder();
-                        foreach (var textLine in block.TextLines)
-                        {
-                            sb.AppendLine(textLine.Text);
-                        }
-
-                        string combinedBlockText = sb.ToString().Trim();
-                        if (!string.IsNullOrWhiteSpace(combinedBlockText))
-                        {
-                            // Safely isolate structural font text sizing parameters from available sub-letters
-                            double maxFontSize = 11.0;
-                            if (block.TextLines.Any() && block.TextLines.First().Words.Any() && block.TextLines.First().Words.First().Letters.Any())
-                            {
-                                maxFontSize = block.TextLines.First().Words.First().Letters.First().FontSize;
-                            }
-
-                            var bbox = block.BoundingBox;
-                            primitives.Add(new PdfWordData
-                            {
-                                ObjectType = PdfObjectType.Text,
-                                Text = combinedBlockText,
-                                FontSize = maxFontSize,
-                                X = bbox.Left,
-                                // Synchronize inverted coordinate space seamlessly for your viewer container mapping
-                                Y = page.Height - bbox.Top,
-                                Width = bbox.Width,
-                                Height = bbox.Height
-                            });
-                        }
-                    }
-                    _logger.LogInformation("[Engine-Layout] Completed parsing text. Created {Count} reading-ordered paragraph blocks.", orderedTextBlocks.Count());
-                }
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "[Engine-Layout] Failed executing native page segmentation pipeline tools.");
-            }
-
-            // 2. Parse Raster Images via Bounding Boxes
-            try
-            {
-                var images = page.GetImages();
-                if (images != null)
-                {
-                    foreach (var img in images)
-                    {
-                        primitives.Add(new PdfWordData
-                        {
-                            ObjectType = PdfObjectType.Image,
-                            Text = $"Embedded Image Resource ({Math.Round(img.Bounds.Width, 1)}x{Math.Round(img.Bounds.Height, 1)})",
-                            X = img.Bounds.Left,
-                            Y = page.Height - img.Bounds.Top,
-                            Width = img.Bounds.Width,
-                            Height = img.Bounds.Height
-                        });
-                    }
-                }
-            }
-            catch (Exception ex) { _logger.LogError(ex, "[Engine] Image parse failure."); }
-
-            // 3. Parse Vector Paths via Experimental Access namespaces
-            try
-            {
-                if (page.ExperimentalAccess?.Paths != null)
-                {
-                    foreach (var path in page.ExperimentalAccess.Paths)
-                    {
-                        var bounds = path.GetBoundingRectangle();
-                        primitives.Add(new PdfWordData
-                        {
-                            ObjectType = PdfObjectType.Path,
-                            Text = path.IsFilled ? "Filled Vector Shape" : "Stroked Path Line",
-                            X = bounds?.Left ?? 0,
-                            Y = page.Height - (bounds?.Top ?? 0),
-                            Width = bounds?.Width ?? 0,
-                            Height = bounds?.Height ?? 0
-                        });
-                    }
-                }
-            }
-            catch (Exception ex) { _logger.LogError(ex, "[Engine] Vector path parse failure."); }
-
-            return primitives;
-        }
+       
 
         /// <summary>
         /// Scans the entire preheated document handle to compile an aggregated master list of all unique text styles.
