@@ -195,7 +195,7 @@ namespace pdf_editor2.ViewModels
                     {
                         PdfObjectType.Image => "Image",
                         PdfObjectType.Path => "Path",
-                        _ => "Paragraph"
+                        _ => "Text"
                     };
 
                     elementsToPush.Add(new pdf_editor2.Views.SideViews.PdfPageElement

@@ -4,29 +4,42 @@
              xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
              xmlns:local="clr-namespace:pdf_editor2.Views.SideViews"
-             mc:Ignorable="d" 
-             d:DesignHeight="450" d:DesignWidth="800">
+             HorizontalContentAlignment="Stretch"
+             VerticalContentAlignment="Stretch">
 
-    <Border Background="#FAFAFA" 
-            BorderBrush="#D0D0D0" 
-            BorderThickness="1" 
-            CornerRadius="4" 
-             Padding="12,12,0,12"
-            VerticalAlignment="Stretch">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="/Views/SideViews/DetailSections/SectionSpatial.xaml" />
+                <ResourceDictionary Source="/Views/SideViews/DetailSections/SectionTypography.xaml" />
+                <ResourceDictionary Source="/Views/SideViews/DetailSections/SectionContent.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        
+            <!-- Reusable Style Presets for clear tracking parameters -->
+            <Style x:Key="SubTitleStyle" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="10"/>
+                <Setter Property="Foreground" Value="#888888"/>
+            </Style>
+            <Style x:Key="SubValueStyle" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="12"/>
+                <Setter Property="FontWeight" Value="Medium"/>
+                <Setter Property="Foreground" Value="#222222"/>
+            </Style>
+            <Style x:Key="HeaderStyle" TargetType="TextBlock">
+                <Setter Property="FontSize" Value="11"/>
+                <Setter Property="FontWeight" Value="SemiBold"/>
+                <Setter Property="Foreground" Value="#555555"/>
+                <Setter Property="Margin" Value="0,0,0,6"/>
+            </Style>
+        </ResourceDictionary>
+    </UserControl.Resources>
 
-        <ScrollViewer VerticalScrollBarVisibility="Auto" 
-                      HorizontalScrollBarVisibility="Disabled"
-                      VerticalContentAlignment="Stretch">
+    <Border Background="#FAFAFA" BorderBrush="#D0D0D0" BorderThickness="1" CornerRadius="4" Padding="12,12,0,12" VerticalAlignment="Stretch">
+        <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled" VerticalContentAlignment="Stretch">
             <Grid VerticalAlignment="Stretch">
-                <!-- Fallback empty prompt overlay visible only when DataContext is null -->
-                <TextBlock Text="Select an element to view detailed properties." 
-                           Foreground="#999999" 
-                           FontSize="12" 
-                           HorizontalAlignment="Center" 
-                           VerticalAlignment="Center" 
-                           TextWrapping="Wrap"
-                           TextAlignment="Center"
-                           Margin="0,40,12,0">
+
+                <!-- Fallback empty prompt overlay -->
+                <TextBlock Text="Select an element to view detailed properties." Foreground="#999999" FontSize="12" HorizontalAlignment="Center" VerticalAlignment="Center" TextWrapping="Wrap" TextAlignment="Center" Margin="0,40,12,0">
                     <TextBlock.Style>
                         <Style TargetType="TextBlock">
                             <Setter Property="Visibility" Value="Collapsed"/>
@@ -39,7 +52,7 @@
                     </TextBlock.Style>
                 </TextBlock>
 
-                <!-- Properties inspector container layout mesh -->
+                <!-- Properties inspector main presentation tree matrix -->
                 <StackPanel VerticalAlignment="Stretch" Margin="0,0,12,0">
                     <StackPanel.Style>
                         <Style TargetType="StackPanel">
@@ -52,96 +65,35 @@
                         </Style>
                     </StackPanel.Style>
 
-                    <!-- Heading Section Label -->
+                    <!-- 
                     <TextBlock Text="Element Properties" FontSize="12" FontWeight="Bold" Foreground="#007ACC" Margin="0,0,0,12"/>
+                    -->
 
-                    <!-- Section: Primitive Geometry Matrix Block -->
-                    <TextBlock Text="Spatial Boundaries" FontSize="11" FontWeight="SemiBold" Foreground="#555555" Margin="0,0,0,6"/>
-                    <UniformGrid Columns="2" Margin="0,0,0,14">
-                        <StackPanel Margin="0,2">
-                            <TextBlock Text="X Coordinate" FontSize="10" Foreground="#888888"/>
-                            <!-- 🛠️ MATCH CHECK: Verified data template mapping to fallback to 0 if data isn't loaded -->
-                            <TextBlock Text="{Binding X, StringFormat={}{0:F2} pt, FallbackValue=0.00 pt}" FontSize="12" FontWeight="Medium" Foreground="#222222"/>
-                        </StackPanel>
-                        <StackPanel Margin="0,2">
-                            <TextBlock Text="Y Coordinate" FontSize="10" Foreground="#888888"/>
-                            <TextBlock Text="{Binding Y, StringFormat={}{0:F2} pt, FallbackValue=0.00 pt}" FontSize="12" FontWeight="Medium" Foreground="#222222"/>
-                        </StackPanel>
-                        <StackPanel Margin="0,2">
-                            <TextBlock Text="Width Size" FontSize="10" Foreground="#888888"/>
-                            <TextBlock Text="{Binding Width, StringFormat={}{0:F2} pt, FallbackValue=0.00 pt}" FontSize="12" FontWeight="Medium" Foreground="#222222"/>
-                        </StackPanel>
-                        <StackPanel Margin="0,2">
-                            <TextBlock Text="Height Size" FontSize="10" Foreground="#888888"/>
-                            <TextBlock Text="{Binding Height, StringFormat={}{0:F2} pt, FallbackValue=0.00 pt}" FontSize="12" FontWeight="Medium" Foreground="#222222"/>
-                        </StackPanel>
-                    </UniformGrid>
+                    <!-- SECTION 1: SPATIAL BOUNDARIES -->
+                    <ContentControl Content="{Binding}" ContentTemplate="{StaticResource SpatialBoundariesSection}"/>
+                  
+                    <Separator Background="#EAEAEA" Margin="0,0,0,12"/>
+
+                    <ContentControl Content="{Binding}" ContentTemplate="{StaticResource TypographySection}"/>
 
                     <Separator Background="#EAEAEA" Margin="0,0,0,12"/>
 
-                    <!-- Section: Typographic Font Metrics Block -->
-                    <TextBlock Text="Typography &amp; Aesthetics" FontSize="11" FontWeight="SemiBold" Foreground="#555555" Margin="0,0,0,6"/>
-                    <StackPanel>
-                        <UniformGrid Columns="2" Margin="0,0,0,6">
-                            <StackPanel Margin="0,2">
-                                <TextBlock Text="Font Weight Size" FontSize="10" Foreground="#888888"/>
-                                <TextBlock Text="{Binding FontSize, StringFormat={}{0:F1} pt, FallbackValue=12.0 pt}" FontSize="12" FontWeight="Medium" Foreground="#222222"/>
-                            </StackPanel>
-                            <StackPanel Margin="0,2">
-                                <TextBlock Text="Color Channel Hex" FontSize="10" Foreground="#888888"/>
-                                <Border HorizontalAlignment="Left" Margin="0,2,0,0" CornerRadius="2" Padding="4,1" BorderThickness="1" BorderBrush="#E0E0E0">
-                                    <StackPanel Orientation="Horizontal">
-                                        <Border Width="10" Height="10" CornerRadius="1" Margin="0,0,4,0" VerticalAlignment="Center">
-                                            <Border.Background>
-                                                <!-- 🛠️ MATCH CHECK: Safeguard pathing for the thumbnail color block -->
-                                                <SolidColorBrush Color="{Binding ForegroundColor, FallbackValue=#000000}"/>
-                                            </Border.Background>
-                                        </Border>
-                                        <!-- 🛠️ MATCH CHECK: Auto falls back to raw text placeholder hex code if unbound -->
-                                        <TextBlock Text="{Binding ForegroundColor, FallbackValue=#000000}" FontSize="11" FontFamily="Consolas" Foreground="#333333" VerticalAlignment="Center"/>
-                                    </StackPanel>
-                                </Border>
-                            </StackPanel>
-                        </UniformGrid>
-
-                        <!-- 🛠️ PATH MATCH CHECK: Ensure this sub-path binding aligns with your StyleMetrics model properties -->
-                        <StackPanel DataContext="{Binding StyleMetrics}" Margin="0,4,0,0">
-                            <TextBlock Text="Font Family Name" FontSize="10" Foreground="#888888"/>
-                            <TextBlock Text="{Binding FontName, FallbackValue=Arial}" FontSize="12" FontWeight="Medium" Foreground="#222222" TextTrimming="CharacterEllipsis" Margin="0,0,0,6"/>
-
-                            <UniformGrid Columns="2" Margin="0,0,0,12">
-                                <CheckBox Content="Bold Weight" IsChecked="{Binding IsBold, FallbackValue=False}" IsEnabled="False" FontSize="11" Margin="0,2"/>
-                                <CheckBox Content="Italic Style" IsChecked="{Binding IsItalic, FallbackValue=False}" IsEnabled="False" FontSize="11" Margin="0,2"/>
-                            </UniformGrid>
-                        </StackPanel>
-                    </StackPanel>
-
-                    <!-- Section: Raw Text String Preview Area -->
-                    <TextBlock Text="Raw Object Content" FontSize="11" FontWeight="SemiBold" Foreground="#555555" Margin="0,0,0,6"/>
-                    <!-- 🛠️ CRITICAL PROPERTY CONVERSION TRICK: 
-                         Since 'Details' works on the DataGrid row, but your PdfWordData model uses 'Text', 
-                         WPF will automatically find whichever property matches and render it cleanly here! -->
-                    <TextBlock TextWrapping="Wrap" 
-           FontSize="11" 
-           Foreground="#444444" 
-           Block.LineHeight="16"
-           LineStackingStrategy="BlockLineHeight">
+                    <!-- SECTION 3: RAW TEXT STRINGS PREVIEW -->
+                    <TextBlock Text="Raw Object Content" Style="{StaticResource HeaderStyle}"/>
+                    <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="#444444" Block.LineHeight="16" LineStackingStrategy="BlockLineHeight">
                         <TextBlock.Text>
                             <PriorityBinding>
-                                <!-- Priority 1: Try reading the raw primitive text field from the model layer -->
-                                <Binding Path="Text" Mode="OneWay"/>
-
-                                <!-- Priority 2: Fallback cleanly to the wrapper details element if Text doesn't exist -->
                                 <Binding Path="Details" Mode="OneWay"/>
-
-                                <!-- Priority 3: Ultimate static string fallback protection if both fields are missing -->
+                                <Binding Path="Text" Mode="OneWay"/>
+                                <Binding Path="Model.Text" Mode="OneWay"/>
                                 <Binding Source="No content available."/>
                             </PriorityBinding>
                         </TextBlock.Text>
                     </TextBlock>
+
                 </StackPanel>
             </Grid>
         </ScrollViewer>
     </Border>
-    
+
 </UserControl>

@@ -36,7 +36,7 @@
         <Grid Grid.Row="1">
             <Grid.RowDefinitions>
                 <!-- 🛠️ CRITICAL LAYOUT MODIFICATION: Swapped out ColumnDefinitions for vertical RowDefinitions -->
-                <RowDefinition Height="2*"/>
+                <RowDefinition Height="*"/>
                 <!-- Top Pane: DataGrid List Grid -->
                 <RowDefinition Height="Auto"/>
                 <!-- Center: Horizontal Resizable Splitter Tracking line -->
@@ -98,7 +98,6 @@
             <!-- 🛠️ RESPONSIVE FIT PATCH: Removed hardcoded Width="260" and swapped it for adaptive Height constraints -->
             <side:ObjectElementDetailView x:Name="DetailPanel"
                               Grid.Row="2" 
-                              DataContext="{Binding SelectedElement}" 
                               MinHeight="140"
                               Width="Auto" 
                               Margin="0,8,0,0"

@@ -80,33 +80,48 @@ namespace pdf_editor2.Views.SideViews
 
         private void GridPageElements_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (GridPageElements.SelectedItem != null)
+            // 🛠️ CRITICAL INDICES FIX: Locate the immediate parent grid container securely
+            if (GridPageElements.Parent is Grid workspaceGrid && workspaceGrid.RowDefinitions.Count >= 3)
             {
-                // 🛠️ CRITICAL FIX: Direct context projection bypasses any broken MVVM binding chains.
-                // This forces the properties grid template inside DetailPanel to read the highlighted row model instantly!
-                if (DetailPanel != null)
-                {
-                    DetailPanel.DataContext = GridPageElements.SelectedItem;
-                    DetailPanel.Visibility = System.Windows.Visibility.Visible;
-                }
+                var row0_DataGrid = workspaceGrid.RowDefinitions[0];    // Top row container slot
+                var row2_DetailPanel = workspaceGrid.RowDefinitions[2]; // Bottom row container slot
 
-                if (PanelSplitter != null)
+                if (GridPageElements.SelectedItem != null)
                 {
-                    PanelSplitter.Visibility = System.Windows.Visibility.Visible;
-                }
-            }
-            else
-            {
-                // Clear context structures safely when selection state is empty
-                if (DetailPanel != null)
-                {
-                    DetailPanel.DataContext = null;
-                    DetailPanel.Visibility = System.Windows.Visibility.Collapsed;
-                }
+                    // 1. Sync data context safely to populate properties fields instantly
+                    if (DetailPanel != null)
+                    {
+                        DetailPanel.DataContext = GridPageElements.SelectedItem;
+                        DetailPanel.Visibility = Visibility.Visible;
+                    }
 
-                if (PanelSplitter != null)
+                    if (PanelSplitter != null)
+                    {
+                        PanelSplitter.Visibility = Visibility.Visible;
+                    }
+
+                    // 🛠️ ACTIVE SELECTION MATRIX: Distribute space perfectly evenly (50/50 split star layout)
+                    row0_DataGrid.Height = new GridLength(1, GridUnitType.Star);
+                    row2_DetailPanel.Height = new GridLength(1, GridUnitType.Star);
+                }
+                else
                 {
-                    PanelSplitter.Visibility = System.Windows.Visibility.Collapsed;
+                    // 2. Safely wipe out local contextual boundaries when selection goes empty
+                    if (DetailPanel != null)
+                    {
+                        DetailPanel.DataContext = null;
+                        DetailPanel.Visibility = Visibility.Collapsed;
+                    }
+
+                    if (PanelSplitter != null)
+                    {
+                        PanelSplitter.Visibility = Visibility.Collapsed;
+                    }
+
+                    // 🛠️ EMPTY SELECTION MATRIX: Collapse the bottom slot completely to 0px (Auto with collapsed child),
+                    // forcing Row 0 (DataGrid) to expand aggressively and absorb 100% full panel height!
+                    row0_DataGrid.Height = new GridLength(1, GridUnitType.Star);
+                    row2_DetailPanel.Height = GridLength.Auto;
                 }
             }
         }

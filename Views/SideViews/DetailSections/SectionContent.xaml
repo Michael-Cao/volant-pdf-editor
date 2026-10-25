@@ -1,0 +1,20 @@
+﻿<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <DataTemplate x:Key="RawContentSection">
+        <StackPanel>
+            <TextBlock Text="Raw Object Content" Style="{DynamicResource HeaderStyle}"/>
+            <TextBlock TextWrapping="Wrap" FontSize="11" Foreground="#444444" Block.LineHeight="16" LineStackingStrategy="BlockLineHeight">
+                <TextBlock.Text>
+                    <PriorityBinding>
+                        <Binding Path="Details" Mode="OneWay"/>
+                        <Binding Path="Text" Mode="OneWay"/>
+                        <Binding Path="Model.Text" Mode="OneWay"/>
+                        <Binding Source="No content available."/>
+                    </PriorityBinding>
+                </TextBlock.Text>
+            </TextBlock>
+        </StackPanel>
+    </DataTemplate>
+    
+</ResourceDictionary>
